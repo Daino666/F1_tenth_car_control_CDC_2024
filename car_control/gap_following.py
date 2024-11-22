@@ -103,7 +103,7 @@ def main(args=None):
     node.create_subscription(LaserScan, '/autodrive/f1tenth_1/lidar', lidar_callback , 10)
     #node.create_subscription(Imu, '/autodrive/f1tenth_1/imu', imu_callback , 10)
     # node.create_subscription(Float32, '/autodrive/f1tenth_1/lap_time', time_callback , 10)
-
+    
     throttling = node.create_publisher(Float32,'/autodrive/f1tenth_1/throttle_command', 10)
     steering= node.create_publisher(Float32,'/autodrive/f1tenth_1/steering_command', 10)
     throttle=Float32()
@@ -111,7 +111,12 @@ def main(args=None):
 
     def timer_callback ():
         global thrtl,steer_value
-        throttle.data = thrtl
+        if abs(steer_value) <= 10 :
+            throttle.data = (1.5/22)
+        elif abs(steer_value) >10 and abs(steer_value) <= 20:
+            throttle.data = (1/22)
+        else:
+            throttle.data = (.5/22) 
         steer.data= float(steer_value)
         throttling.publish(throttle)
         steering.publish(steer)
