@@ -47,15 +47,15 @@ def lidar_callback (msg):
 
     control_ranges = np.array(lidar_ranges[180:901]) 
     control_ranges = np.nan_to_num(control_ranges, nan=10.0, posinf=10.0)
-    control_ranges = np.clip(control_ranges, 0.0, 4.0)   
+    control_ranges = np.clip(control_ranges, 0.0, 7.0)   
     right_car = np.array(lidar_ranges[:181])
     left_car = np.array(lidar_ranges[900:])
 
 
-    if abs(np.min(right_car)) < 0.5:
-        steer_value = 0.4  # Turn left if too close to right wall
+    if abs(np.min(right_car)) < 0.2:
+        steer_value = 0.  # Turn left if too close to right wall
         node.get_logger().info("getting away RIGHT WALL")
-    elif abs(np.min(left_car)) < 0.5:
+    elif abs(np.min(left_car)) < 0.2:
         steer_value = -0.4  # Turn right if too close to left wall
         node.get_logger().info("etting away LEFT WALL")
 
@@ -111,9 +111,9 @@ def main(args=None):
 
     def timer_callback ():
         global thrtl,steer_value
-        if abs(steer_value) <= 10 :
+        if abs(steer_value) <= 10/30 :
             throttle.data = (1.5/22)
-        elif abs(steer_value) >10 and abs(steer_value) <= 20:
+        elif abs(steer_value) >10/30 and abs(steer_value) <= 20/30:
             throttle.data = (1/22)
         else:
             throttle.data = (.5/22) 
