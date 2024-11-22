@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+
+#####this commit doesnt give the error of putting large numbeer in an array, meaning that the problem or array index happens because of the other if conditions
+
+
 import rclpy
 import math
 import numpy as np
