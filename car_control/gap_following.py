@@ -38,12 +38,13 @@ def plot_variable(values):
 
 def lidar_callback (msg):
     global node,gap_counter,max_gap_width,steer_value,margin,gap_end_index,close_threshold
-
+#    start_time = time.time()
 
     angle_min=msg.angle_min
     angle_max=msg.angle_max
     angle_increment=msg.angle_increment
     lidar_ranges=msg.ranges
+
 
     control_ranges = np.array(lidar_ranges[180:901]) 
     control_ranges = np.nan_to_num(control_ranges, nan=10.0, posinf=10.0)
@@ -53,9 +54,11 @@ def lidar_callback (msg):
 
 
     if abs(np.min(right_car)) < 0.2:
+        pass
         steer_value = 0.2  # Turn left if too close to right wall
         node.get_logger().info("getting away RIGHT WALL")
     elif abs(np.min(left_car)) < 0.2:
+        pass
         steer_value = -0.2  # Turn right if too close to left wall
         node.get_logger().info("etting away LEFT WALL")
 
@@ -85,13 +88,16 @@ def lidar_callback (msg):
 
         # Normal steering calculation if not too close to walls
         if 355 <= index <= 365: 
+            pass
             steer_value = 0  # Go straight if disparity is in middle
             node.get_logger().info("NO Need STEERING")
         else:
             steer_value = ((index / len(control_ranges)) * 2) - 1
             node.get_logger().info("CONTROLING STEERING")
             node.get_logger().info(f'Index value is: {index}')
-
+#    end_time = time.time()
+#    processing_time = end_time - start_time
+#   node.get_logger().info(f'Lidar callback processing time: {processing_time:.6f} seconds') takes almost .0015 sec
 
 
     
@@ -117,6 +123,8 @@ def main(args=None):
             throttle.data = (1/22)
         else:
             throttle.data = (.5/22) 
+        
+        throttle.data = .05 #testing 
         steer.data= float(steer_value)
         throttling.publish(throttle)
         steering.publish(steer)
