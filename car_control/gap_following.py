@@ -66,7 +66,7 @@ def lidar_callback (msg):
         node.get_logger().info("etting away LEFT WALL")
 
     else:
-        car_width = 0.27
+        car_width = 0.5
         chord_length = car_width *.75  #for tolerance
 
 
@@ -102,7 +102,7 @@ def lidar_callback (msg):
             control_angle_min = -90  # in degrees
             gap_angle = control_angle_min + (gap_index) * np.degrees(angle_increment)
             gap_angle = np.radians(gap_angle)
-            max_steer_angle = np.radians(120)
+            max_steer_angle = np.radians(100)
             steer_value = np.clip(gap_angle / max_steer_angle, -1, 1)
             if abs(gap_angle) < 0.1:  # Tolerance for centered gaps
                 steer_value = 0
