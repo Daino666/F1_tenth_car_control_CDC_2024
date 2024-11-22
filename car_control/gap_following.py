@@ -87,11 +87,11 @@ def lidar_callback (msg):
 
 
         # Normal steering calculation if not too close to walls
-        if 355 <= index <= 365: 
-            return 
-            steer_value = 0  # Go straight if disparity is in middle
-            node.get_logger().info("NO Need STEERING")
-        else:
+        #if 355 <= index <= 365: 
+        #    return 
+        #    steer_value = 0  # Go straight if disparity is in middle
+        #    node.get_logger().info("NO Need STEERING")
+        if True:
             steer_value = ((index / len(control_ranges)) * 2) - 1
             node.get_logger().info("CONTROLING STEERING")
             node.get_logger().info(f'Index value is: {index}')
