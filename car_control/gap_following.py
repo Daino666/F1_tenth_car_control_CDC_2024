@@ -48,8 +48,8 @@ def lidar_callback (msg):
     control_ranges = np.array(lidar_ranges[180:901]) 
     control_ranges = np.nan_to_num(control_ranges, nan=10.0, posinf=10.0)
     control_ranges = np.clip(control_ranges, 0.0, 4.0)   
-    right_car = np.array(llidar_ranges[:181])
-    left_car = np.array(llidar_ranges[900:])
+    right_car = np.array(lidar_ranges[:181])
+    left_car = np.array(lidar_ranges[900:])
 
 
     if abs(np.min(right_car)) < 0.5:
@@ -122,19 +122,20 @@ def main(args=None):
         steering.publish(steer)
 
     timer = node.create_timer(0.02, timer_callback)    # 50 Hz
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        throttling.publish(Float32(data = 0.0))  # Publish 0 throttle to stop motion
+        steering.publish(Float32(data = 0.0))    # Publish 0 steering to stop steering
+    finally:
+        node.destroy_timer(timer)
+        node.destroy_node()
+        rclpy.shutdown()
+
     
    
-    while rclpy.ok ():
-        rclpy .spin(node)
-    node.destroy_timer(timer)
-    node.destroy_node()
-    rclpy.shutdown()
-
-
-
+    
 if __name__=='__main__':
     main()
 
-#get lidar info
-#give steering command
-#give throttle command
