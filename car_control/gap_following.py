@@ -80,12 +80,13 @@ def lidar_callback (msg):
         no_disparity_index = int(arc_degrees/angle_increment)+1
         if control_ranges[disparity_index] - control_ranges[disparity_index+1] > 0:
         # Fill forward
-            end_idx = min(len(control_ranges), disparity_index + no_disparity_index + 1)
-            control_ranges[(disparity_index+1):end_idx] = control_ranges[disparity_index]
-        elif control_ranges[disparity_index] - control_ranges[disparity_index+1] < 0:
-        # Fill backward
             start_idx = max(0, disparity_index - no_disparity_index)
             control_ranges[start_idx:disparity_index] = control_ranges[disparity_index+1]
+
+        elif control_ranges[disparity_index] - control_ranges[disparity_index+1] < 0:
+        # Fill backward
+            end_idx = min(len(control_ranges), disparity_index + no_disparity_index + 1)
+            control_ranges[(disparity_index+1):end_idx] = control_ranges[disparity_index]
 
 
         differences = np.abs(np.diff(control_ranges))
