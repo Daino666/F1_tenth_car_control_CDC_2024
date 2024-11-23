@@ -22,7 +22,8 @@ setup(
         'console_scripts': [
             'gap = car_control.gap_following:main',
             'pure_pursuit_algo = car_control.Pure_pursuit:main',
-            'CSV_maker  = car_control.CSV_maker:main'
+            'CSV_maker  = car_control.CSV_maker:main',
+            'wall_following  = car_control.wall_following:main'
         ],
     },
 )
