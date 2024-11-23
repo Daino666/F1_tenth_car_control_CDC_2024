@@ -1,7 +1,7 @@
 def Omar():
 
 
-    pass
+    ana omar abbas w ana b7b akol el mahshy gedan gedna
 
 
 
