@@ -1,16 +1,9 @@
 import rclpy
 import math
 import numpy as np
-from rclpy.node import Node
 from sensor_msgs.msg import LaserScan, Imu
 from std_msgs.msg import Float32
-import time
 
-rclpy.init()
-node=rclpy.create_node('PID_wall_following')
-
-steering_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/steering_command', 0)
-throttle_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/throttle_command', 0)
 
 
 def get_angle_index(scan, angle):#to get the index of the angle in the scanning range
@@ -22,7 +15,6 @@ def get_angle_index(scan, angle):#to get the index of the angle in the scanning 
 
 
 def lidar_callback(scan):
-    start=time.start()
     global steering_pub
     global throttle_pub
     e_of_t_1=0
@@ -85,14 +77,32 @@ def lidar_callback(scan):
 
 
     throttle_pub.publish(throttle)
-    end=time.end()
-    print(f"proc={end-start}, angle_to_Lwall={steering_angle.data}")#####sure right
 
 
-lidar_sub=node.create_subscription(LaserScan, 'prev_str_ang', lidar_callback, 0)
 
 
-rclpy.spin(node)
+def main(arg = None)
+    global node
+    global steering_pub
+    global throttle_pub
 
-node.destroy_node()
-rclpy.shutdown()
+    rclpy.init(args = args)
+    node=rclpy.create_node('PID_wall_following')
+    steering_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/steering_command', 0)
+    throttle_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/throttle_command', 0)
+    lidar_sub=node.create_subscription(LaserScan, 'prev_str_ang', lidar_callback, 0)
+
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        throttling.publish(Float32(data = 0.0))  # Publish 0 throttle to stop motion
+        steering.publish(Float32(data = 0.0))    # Publish 0 steering to stop steering
+    finally:
+        node.destroy_timer(timer)
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__=='__main__':
+    main()
