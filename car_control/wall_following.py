@@ -81,12 +81,12 @@ def lidar_callback(scan):
 
 
 
-def main(arg = None)
+def main(arg = None):
     global node
     global steering_pub
     global throttle_pub
 
-    rclpy.init(args = args)
+    rclpy.init(args = arg)
     node=rclpy.create_node('PID_wall_following')
     steering_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/steering_command', 0)
     throttle_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/throttle_command', 0)
@@ -96,10 +96,10 @@ def main(arg = None)
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        throttling.publish(Float32(data = 0.0))  # Publish 0 throttle to stop motion
-        steering.publish(Float32(data = 0.0))    # Publish 0 steering to stop steering
+        throttle_pub.publish(Float32(data = 0.0))  # Publish 0 throttle to stop motion
+        steering_pub.publish(Float32(data = 0.0))    # Publish 0 steering to stop steering
     finally:
-        node.destroy_timer(timer)
+        #node.destroy_timer(timer)
         node.destroy_node()
         rclpy.shutdown()
 
