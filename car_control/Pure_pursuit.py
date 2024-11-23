@@ -1,9 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python 
+
+
 import csv
 import rclpy
 import numpy as np
 from std_msgs.msg import Float32, Float64, String
 from tf.transformations import euler_from_quaternion
+import time 
 
 counter = 0
 flag = 'y'
