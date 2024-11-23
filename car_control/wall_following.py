@@ -90,7 +90,7 @@ def main(arg = None):
     node=rclpy.create_node('PID_wall_following')
     steering_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/steering_command', 0)
     throttle_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/throttle_command', 0)
-    lidar_sub=node.create_subscription(LaserScan, 'prev_str_ang', lidar_callback, 0)
+    lidar_sub=node.create_subscription(LaserScan, '/autodrive/f1tenth_1/lidar', lidar_callback, 0)
 
 
     try:
