@@ -80,11 +80,13 @@ def lidar_callback (msg):
         no_disparity_index = int(arc_degrees/angle_increment)+1
         if control_ranges[disparity_index] - control_ranges[disparity_index+1] > 0:
         # Fill forward
+            node.get_logger().info(f'Gap is left the car')
             start_idx = max(0, disparity_index - no_disparity_index)
             control_ranges[start_idx:disparity_index] = control_ranges[disparity_index+1]
 
         elif control_ranges[disparity_index] - control_ranges[disparity_index+1] < 0:
         # Fill backward
+            node.get_logger().info(f'Gap is right the car')
             end_idx = min(len(control_ranges), disparity_index + no_disparity_index + 1)
             control_ranges[(disparity_index+1):end_idx] = control_ranges[disparity_index]
 
@@ -107,7 +109,10 @@ def lidar_callback (msg):
             if abs(gap_angle) < 0.1:  # Tolerance for centered gaps
                 steer_value = 0
             node.get_logger().info(f'disparity_Index value is: {disparity_index} but Gap indes is {gap_index}')
-            node.get_logger().info(f'Gap disparity_Index: {gap_index}, Gap Angle: {gap_angle*180/np.pi:.2f} degrees, Steer Value: {steer_value*30:.2f}')
+            node.get_logger().info(f'Gap disparity_Index: {gap_index}, Gap Angle: {gap_angle*180/np.pi:.2f} degrees, Steer Value: {steer_value*30:.2f} ')
+
+
+
 #    end_time = time.time()
 #    processing_time = end_time - start_time
 #   node.get_logger().info(f'Lidar callback processing time: {processing_time:.6f} seconds') takes almost .0015 sec
