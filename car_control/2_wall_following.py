@@ -1,17 +1,20 @@
 import rclpy
 import math
 import numpy as np
+from rclpy.node import Node
 from sensor_msgs.msg import LaserScan, Imu
 from std_msgs.msg import Float32
 
+rclpy.init()
+node=rclpy.create_node('PID_wall_following')
+
+steering_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/steering_command', 0)
+throttle_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/throttle_command', 0)
 
 
 def get_angle_index(scan, angle):#to get the index of the angle in the scanning range
     index=angle*len(scan.ranges)/((-1 *scan.angle_min + scan.angle_max)*180/np.pi )
     return(int(index))
-
-
-
 
 
 def lidar_callback(scan):
@@ -43,27 +46,27 @@ def lidar_callback(scan):
     D_R=ang_60_distance*math.cos(math.radians(angle_to_Rwall))
 
 ###     
-    if math.isinf(ang_Neg90_distance) or math.isinf(ang_Neg60_distance):
-        if(prev_ld<=0.2):
-            prev_ld=0.6
-        steering_angle.data=prev_ld-D_R
-        if abs(angle_to_Rwall)>0.1:
-            steering_angle.data-=max(0.04, 2.5*angle_to_Rwall)
-    elif math.isinf(ang_90_distance) or math.isinf(ang_60_distance):
-        if(prev_rd<=0.2):
-            prev_rd=0.6
-        steering_angle.data=D_L-prev_rd
-        if abs(angle_to_Lwall)>0.1:
-            steering_angle.data+=max(0.04, 2.5*angle_to_Lwall )       
-    else:
-        steering_angle.data=(D_L-D_R)/2
-        if abs(angle_to_Lwall)>0.1:
-            steering_angle.data+=max(0.02, 2.5*angle_to_Lwall )  
-        if abs(angle_to_Rwall)>0.1:
-            steering_angle.data-=max(0.02, 2.5*angle_to_Rwall)
+    #if math.isinf(ang_Neg90_distance) or math.isinf(ang_Neg60_distance):
+    if(prev_ld<=0.6):
+        prev_ld=0.6
+    steering_angle.data=prev_ld-D_R
+    if abs(angle_to_Rwall)>0.1:
+        steering_angle.data-=max(0.04, 5*angle_to_Rwall)
+    #elif math.isinf(ang_90_distance) or math.isinf(ang_60_distance):
+    #    if(prev_rd<=0.2):
+    #        prev_rd=0.6
+    #    steering_angle.data=D_L-prev_rd
+    #    if abs(angle_to_Lwall)>0.1:
+    #        steering_angle.data+=max(0.04, 5*angle_to_Lwall )       
+    #else:
+    #    steering_angle.data=(D_L-D_R)/2
+    #    if abs(angle_to_Lwall)>0.1:
+    #        steering_angle.data+=max(0.02, 2.5*angle_to_Lwall )  
+    if abs(angle_to_Rwall)>0.1:
+        steering_angle.data-=5*angle_to_Rwall
 
 
-    steering_angle.data=max(-0.6, min(0.6, (steering_angle.data/abs(steering_angle.data))*(abs(steering_angle.data)+abs(prev_str_ang))/2))
+    steering_angle.data=max(-0.5, min(0.5, (steering_angle.data)))
     steering_pub.publish(steering_angle)
 
     prev_ld=D_L
@@ -75,34 +78,14 @@ def lidar_callback(scan):
     if abs(prev_ld-D_L)>0.2 or abs(prev_rd-D_R)>0.2:
         throttle=0.0
 
+    print(f"steering_angle={steering_angle.data}, angle_to_Lwall={angle_to_Lwall}")#####sure right
 
     throttle_pub.publish(throttle)
 
+lidar_sub=node.create_subscription(LaserScan, 'autodrive/f1tenth_1/lidar', lidar_callback, 0)
 
 
+rclpy.spin(node)
 
-def main(arg = None):
-    global node
-    global steering_pub
-    global throttle_pub
-
-    rclpy.init(args = arg)
-    node=rclpy.create_node('PID_wall_following')
-    steering_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/steering_command', 0)
-    throttle_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/throttle_command', 0)
-    lidar_sub=node.create_subscription(LaserScan, '/autodrive/f1tenth_1/lidar', lidar_callback, 0)
-
-
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        throttle_pub.publish(Float32(data = 0.0))  # Publish 0 throttle to stop motion
-        steering_pub.publish(Float32(data = 0.0))    # Publish 0 steering to stop steering
-    finally:
-        #node.destroy_timer(timer)
-        node.destroy_node()
-        rclpy.shutdown()
-
-
-if __name__=='__main__':
-    main()
+node.destroy_node()
+rclpy.shutdown()
