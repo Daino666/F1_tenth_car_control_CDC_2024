@@ -2,7 +2,14 @@ import rclpy
 import math
 import numpy as np
 from sensor_msgs.msg import LaserScan, Imu
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Int32
+
+global laps_count
+
+def lap_count_CB(laps):
+    global laps_count
+    laps_count = laps.data
+    node.get_logger().info(f"labs equal to{laps_count}")
 
 
 
@@ -17,6 +24,7 @@ def get_angle_index(scan, angle):#to get the index of the angle in the scanning 
 def lidar_callback(scan):
     global steering_pub
     global throttle_pub
+    global laps_count
     e_of_t_1=0
     i_e=0
     Kp=2.7
@@ -91,7 +99,7 @@ def main(arg = None):
     steering_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/steering_command', 0)
     throttle_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/throttle_command', 0)
     lidar_sub=node.create_subscription(LaserScan, '/autodrive/f1tenth_1/lidar', lidar_callback, 0)
-
+    labs_count = node.create_subscription(Int32, '/autodrive/f1tenth_1/lap_count', lap_count_CB, 0)
 
     try:
         rclpy.spin(node)
