@@ -71,22 +71,26 @@ def lidar_callback (msg):
 
 
         differences = (np.diff(control_ranges))
-        disparity_index = np.argmax(differences)  
+        positive_differences = np.abs(differences)
+        disparity_index = np.argmax(positive_differences)  
 
-        ratio = chord_length/(2*control_ranges[np.min([disparity_index,disparity_index+1])])
+        ratio = chord_length / (2.0 * np.min([control_ranges[disparity_index], control_ranges[disparity_index+1]]))
         ratio = np.clip(ratio, -1, 1)  # Ensure the ratio is between -1 and 1
         arc_degrees = 2* np.arcsin(ratio)
-
         no_disparity_index = int(arc_degrees/angle_increment)+1
+        node.get_logger().info(f'control range = {control_ranges[disparity_index]} , {control_ranges[disparity_index+1]}')
+        no_disparity_index = int(arc_degrees/angle_increment)+1
+
+        
         if control_ranges[disparity_index] - control_ranges[disparity_index+1] > 0:
-        # Fill forward
-            node.get_logger().info(f'Gap is left the car')
+        # Fill backward
+            node.get_logger().info(f'gap is right')    
             start_idx = max(0, disparity_index - no_disparity_index)
             control_ranges[start_idx:disparity_index] = control_ranges[disparity_index+1]
 
         elif control_ranges[disparity_index] - control_ranges[disparity_index+1] < 0:
-        # Fill backward
-            node.get_logger().info(f'Gap is right the car')
+        # Fill Forward
+            node.get_logger().info(f'gap is Left')    
             end_idx = min(len(control_ranges), disparity_index + no_disparity_index + 1)
             control_ranges[(disparity_index+1):end_idx] = control_ranges[disparity_index]
 
