@@ -23,7 +23,9 @@ setup(
             'gap = car_control.gap_following:main',
             'pure_pursuit_algo = car_control.Pure_pursuit:main',
             'CSV_maker  = car_control.CSV_maker:main',
-            'wall_following  = car_control.wall_following:main'
+            'wall_following  = car_control.wall_following:main',
+            'wall_1  = car_control.1_wall_following:main',
+            'wall_2  = car_control.2_wall_following:main',
         ],
     },
 )#
