@@ -11,48 +11,9 @@ node=rclpy.create_node('PID_wall_following')
 steering_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/steering_command', 10)
 throttle_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/throttle_command', 10)
 
-def quaternion_to_euler(x, y, z, w):
-    """
-    Convert a quaternion into roll, pitch, and yaw (in radians).
-    """
-    # Roll (x-axis rotation)
-    sinr_cosp = 2 * (w * x + y * z)
-    cosr_cosp = 1 - 2 * (x * x + y * y)
-    roll = math.atan2(sinr_cosp, cosr_cosp)
-
-    # Pitch (y-axis rotation)
-    sinp = 2 * (w * y - z * x)
-    if abs(sinp) >= 1:
-        pitch = math.copysign(math.pi / 2, sinp)  # Use 90 degrees if out of range
-    else:
-        pitch = math.asin(sinp)
-
-    # Yaw (z-axis rotation)
-    siny_cosp = 2 * (w * z + x * y)
-    cosy_cosp = 1 - 2 * (y * y + z * z)
-    yaw = math.atan2(siny_cosp, cosy_cosp)
-
-    return roll, pitch, yaw
-
 def get_angle_index(scan, angle):#to get the index of the angle in the scanning range
     index=angle*len(scan.ranges)/((-1 *scan.angle_min + scan.angle_max)*180/np.pi )
     return(int(index))
-
-def imu_callback(msg):
-    # Extract quaternion orientation
-    orientation = msg.orientation
-    roll, pitch, yaw = quaternion_to_euler(
-        orientation.x, orientation.y, orientation.z, orientation.w
-    )
-
-    # Convert radians to degrees
-    roll_deg = math.degrees(roll)
-    pitch_deg = math.degrees(pitch)
-    yaw_deg = math.degrees(yaw)
-
-    #print(f"x={roll_deg}. y={pitch_deg}")
-
-
 
 def lidar_callback(scan):
     global steering_pub
@@ -111,9 +72,8 @@ def lidar_callback(scan):
 
         #throttle.data=0.02
         throttle.data=min(0.02,max(1/abs(steering_angle.data*150), 0.02))
-        print(f"steering_angle={steering_angle.data}, angle_to_Lwall={angle_to_Lwall}")#####sure right
+        #####sure right
 
-        
         
     except Exception as e:
         throttle.data = 0.00
@@ -129,7 +89,14 @@ def lidar_callback(scan):
 
     throttle_pub.publish(throttle)
 
+    def steering_callback(msg):
+        print(f"steering_angle={steering_angle.data:.2f}, act_steer={msg.data:.2f}")
+
+    steer_sub=node.create_subscription(Float32, 'autodrive/f1tenth_1/steering_command', steering_callback, 0)
+
+
 lidar_sub=node.create_subscription(LaserScan, 'autodrive/f1tenth_1/lidar', lidar_callback, 0)
+
 #orientation=node.create_subscription(Imu, '/autodrive/f1tenth_1/imu', imu_callback, 1)
 
 
