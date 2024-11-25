@@ -60,7 +60,7 @@ def lidar_callback (msg):
         return
         steer_value = 0.2  # Turn left if too close to right wall
         node.get_logger().info("getting away RIGHT WALL")
-    elif abs(np.min(left_car)) < 0.2:
+    elif abs(np.min(left_car)) < 0.4:
         return
         steer_value = -0.2  # Turn right if too close to left wall
         node.get_logger().info("etting away LEFT WALL")
