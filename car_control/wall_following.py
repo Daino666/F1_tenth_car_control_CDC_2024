@@ -56,7 +56,7 @@ def lidar_callback(scan):
         if abs(angle_to_Rwall)>0.1:
             steering_angle.data-=2.5*angle_to_Rwall
     
-    steering_angle.data=max(-0.5, min(0.5, steering_angle.data))
+    steering_angle.data=(max(-1, min(1, steering_angle.data))+prev_steering)
     steering_pub.publish(steering_angle)
 
 
@@ -64,7 +64,7 @@ def lidar_callback(scan):
     prev_rd=D_R
     prev_steering=steering_angle.data
 
-    throttle.data=0.09
+    throttle.data=0.11
     if(lap_count>=12):
         throttle.data=0.00
     throttle_pub.publish(throttle)
