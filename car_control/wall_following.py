@@ -16,7 +16,7 @@ def get_angle_index(scan, angle):#to get the index of the angle in the scanning 
     return(int(index))
 
 def lidar_callback(scan):
-    global steering_pub, throttle_pub, throttle, steering_angle, lap_count
+    global steering_pub, throttle_pub, throttle, steering_angle
     prev_rd=0.0
     prev_ld=0.0
     prev_steering=0.0
@@ -47,13 +47,13 @@ def lidar_callback(scan):
         if abs(angle_to_Lwall)>0.1:
             steering_angle.data+=5*angle_to_Lwall      
     else:
-        steering_angle.data=(D_L-D_R)/2
+        steering_angle.data=(D_L-D_R)
         if abs(angle_to_Lwall)>0.1:
             steering_angle.data+=2.5*angle_to_Lwall
         if abs(angle_to_Rwall)>0.1:
             steering_angle.data-=2.5*angle_to_Rwall
     
-    steering_angle.data=(max(-1, min(1, steering_angle.data))+prev_steering)
+    steering_angle.data=(max(-1, min(1, steering_angle.data))+prev_steering)/2
     steering_pub.publish(steering_angle)
 
 
@@ -61,11 +61,9 @@ def lidar_callback(scan):
     prev_rd=D_R
     prev_steering=steering_angle.data
 
-    throttle.data=0.1
+    throttle.data=0.10
     #if abs(angle_to_Rwall) <= 0.1:
      #   throttle.data=0.15
-    if(lap_count>=12):
-        throttle.data=0.00
     throttle_pub.publish(throttle)
 
 
@@ -73,7 +71,7 @@ def lidar_callback(scan):
 
 
 def main(arg = None):
-    global node, steering_pub, throttle_pub, throttle, steering_angle, lap_count
+    global node, steering_pub, throttle_pub, throttle, steering_angle
 
     rclpy.init(args = arg)
     node=rclpy.create_node('PID_wall_following')

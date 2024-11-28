@@ -24,10 +24,10 @@ def lidar_callback(scan):
     prev_ld=0.0
     prev_steering=0.0
     theta= 30
-    kr=104.0/(129.0*3)
-    hr=13.0/(215.0*3)
-    kl=26.0/(21.0*3)
-    hl=13.0/(70.0*3)
+    kr=104.0/(129.0)
+    hr=13.0/(215.0)
+    kl=26.0/(21.0)
+    hl=13.0/(70.0)
 
     ang_Neg90_distance=scan.ranges[get_angle_index(scan, -90)]
     ang_Neg60_distance=scan.ranges[get_angle_index(scan,-90+theta)]
