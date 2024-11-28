@@ -24,10 +24,10 @@ def lidar_callback(scan):
     prev_ld=0.0
     prev_steering=0.0
     theta= 30
-    kr=104.0/129.0
-    hr=13.0/215.0
-    kl=26.0/21.0
-    hl=13.0/70.0
+    kr=104.0/(129.0*3)
+    hr=13.0/(215.0*3)
+    kl=26.0/(21.0*3)
+    hl=13.0/(70.0*3)
 
     ang_Neg90_distance=scan.ranges[get_angle_index(scan, -90)]
     ang_Neg60_distance=scan.ranges[get_angle_index(scan,-90+theta)]
@@ -46,26 +46,27 @@ def lidar_callback(scan):
             prev_ld=0.6
         steering_angle.data=prev_ld-D_R
         steering_angle.data=kr*angle_to_Rwall+hr
+        print(f"(first) s1= {prev_ld-D_R}, s2= {kr*angle_to_Rwall+hr}")   
     elif math.isinf(ang_90_distance) or math.isinf(ang_60_distance):
         if(prev_rd==0):
             prev_rd=0.6
-        steering_angle.data=D_L-prev_rd
-        steering_angle.data+=kl*angle_to_Lwall+hl   
+        steering_angle.data=(prev_rd-D_L)/10
+        steering_angle.data+=8*(kl*angle_to_Lwall+hl)
+        print(f"(second) s1= {D_L-prev_rd}, s2= {kl*angle_to_Lwall+hl}")   
     else:
-        steering_angle.data=1.3*(D_L-D_R-0.4)/2
-        if abs(angle_to_Lwall)>0.1:
-            steering_angle.data+kr*angle_to_Rwall+hr
-        if abs(angle_to_Rwall)>0.1:
-            steering_angle.data+=kl*angle_to_Lwall+hl 
+        steering_angle.data=(D_L-D_R-0.4)/1.5
+        steering_angle.data+=kr*angle_to_Rwall+hr
+        steering_angle.data+=kl*angle_to_Lwall+hl 
+        print(f"(third) s1= {(D_L-D_R-0.4)/2}, s2= {kr*angle_to_Rwall+hr}, s3= {kl*angle_to_Lwall+hl }")
+
     
     steering_pub.publish(steering_angle)
-    print((D_L-D_R-0.6)/2)
 
     prev_ld=D_L
     prev_rd=D_R
     prev_steering=steering_angle.data
 
-    throttle.data=0.09
+    throttle.data=0.1
     if(lap_count>=12):
         throttle.data=0.00
     throttle_pub.publish(throttle)
