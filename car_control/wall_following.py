@@ -66,8 +66,6 @@ def lidar_callback(scan):
         throttle.data=0.2#1.3
     if min(scan.ranges)>=0.6 and abs(angle_to_Rwall)<=0.02 and abs(angle_to_Lwall)<=0.02:
         throttle.data=0.15
-    if(lap_count>=12):
-        throttle.data=0.00
     throttle_pub.publish(throttle)
 
 
