@@ -1,5 +1,6 @@
 from setuptools import find_packages, setup
-
+import os
+from glob import glob
 package_name = 'car_control'
 
 setup(
@@ -10,7 +11,8 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/car_control/action', ['action/WallFollowing.action']),
+        (os.path.join('share', package_name), glob('launch/autodrive_devkit/launch/simulator_bringup_rviz.launch.py'))
+
     ],
     install_requires=['setuptools'],
     zip_safe=True,
