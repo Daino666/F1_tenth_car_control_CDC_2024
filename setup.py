@@ -11,8 +11,11 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+<<<<<<< HEAD
         (os.path.join('share', package_name), glob('launch/autodrive_devkit/launch/simulator_bringup_rviz.launch.py'))
 
+=======
+>>>>>>> fe8571f9ba5ed1a7b1cfba93aa1d51fb48962588
     ],
     install_requires=['setuptools'],
     zip_safe=True,
