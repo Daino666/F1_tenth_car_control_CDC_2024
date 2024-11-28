@@ -4,22 +4,19 @@ import numpy as np
 from sensor_msgs.msg import LaserScan, Imu
 from std_msgs.msg import Float32, Int32
 
-global lap_count, throttle, steering_angle
-lap_count = 0
+global throttle, steering_angle
 throttle = Float32()
 steering_angle = Float32()
 
 
-def lap_count_callback(laps):
-    global lap_count
-    lap_count = laps.data
+
 
 def get_angle_index(scan, angle):#to get the index of the angle in the scanning range
     index=angle*len(scan.ranges)/((-1 *scan.angle_min + scan.angle_max)*180/np.pi )
     return(int(index))
 
 def lidar_callback(scan):
-    global steering_pub, throttle_pub, throttle, steering_angle, lap_count
+    global steering_pub, throttle_pub, throttle, steering_angle
     prev_rd=0.0
     prev_ld=0.0
     prev_steering=0.0
@@ -50,7 +47,7 @@ def lidar_callback(scan):
         if abs(angle_to_Lwall)>0.1:
             steering_angle.data+=5*angle_to_Lwall      
     else:
-        steering_angle.data=(D_L-D_R)/2
+        steering_angle.data=(D_L-D_R)
         if abs(angle_to_Lwall)>0.1:
             steering_angle.data+=2.5*angle_to_Lwall
         if abs(angle_to_Rwall)>0.1:
@@ -78,13 +75,12 @@ def lidar_callback(scan):
 
 
 def main(arg = None):
-    global node, steering_pub, throttle_pub, throttle, steering_angle, lap_count
+    global node, steering_pub, throttle_pub, throttle, steering_angle
 
     rclpy.init(args = arg)
     node=rclpy.create_node('PID_wall_following')
     steering_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/steering_command', 0)
     throttle_pub= node.create_publisher(Float32, 'autodrive/f1tenth_1/throttle_command', 0)
-    labs_count_sub = node.create_subscription(Int32, '/autodrive/f1tenth_1/lap_count', lap_count_callback, 0)
     lidar_sub=node.create_subscription(LaserScan, '/autodrive/f1tenth_1/lidar', lidar_callback, 0)
 
     try:
