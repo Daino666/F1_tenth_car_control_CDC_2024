@@ -64,7 +64,7 @@ def lidar_callback(scan):
     prev_rd=D_R
     prev_steering=steering_angle.data
 
-    throttle.data=0.12
+    throttle.data=0.11
     if min(scan.ranges)>=0.4 and abs(angle_to_Rwall)<=0.05 and abs(angle_to_Lwall)<=0.02:
         throttle.data=0.7#1.3
     if min(scan.ranges)>=0.6 and abs(angle_to_Rwall)<=0.02 and abs(angle_to_Lwall)<=0.02:
