@@ -5,21 +5,16 @@ from sensor_msgs.msg import LaserScan, Imu
 from std_msgs.msg import Float32, Int32
 
 global lap_count, throttle, steering_angle
-lap_count = 0
 throttle = Float32()
 steering_angle = Float32()
 
-
-def lap_count_callback(laps):
-    global lap_count
-    lap_count = laps.data
 
 def get_angle_index(scan, angle):#to get the index of the angle in the scanning range
     index=angle*len(scan.ranges)/((-1 *scan.angle_min + scan.angle_max)*180/np.pi )
     return(int(index))
 
 def lidar_callback(scan):
-    global steering_pub, throttle_pub, throttle, steering_angle, lap_count
+    global steering_pub, throttle_pub, throttle, steering_angle
     prev_rd=0.0
     prev_ld=0.0
     prev_steering=0.0
@@ -77,7 +72,7 @@ def lidar_callback(scan):
 
 
 def main(arg = None):
-    global node, steering_pub, throttle_pub, throttle, steering_angle, lap_count
+    global node, steering_pub, throttle_pub, throttle, steering_angle
 
     rclpy.init(args = arg)
     node=rclpy.create_node('PID_wall_following')
