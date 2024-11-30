@@ -49,11 +49,10 @@ def create_occupancy_grid(occupany_grid, yaml_data):
             elif occupany_grid[y][x] <= free_thresh:
                 occupany_grid[y][x] = 0
 
-            else:
-                occupany_grid[y][x] = -1
 
     
     grid_data = occupany_grid.flatten().tolist()
+    grid_data = np.array(grid_data)
 
     occ_grid_msg = OccupancyGrid()
     occ_grid_msg.header.frame_id = "map"
