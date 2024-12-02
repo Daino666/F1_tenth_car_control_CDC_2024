@@ -57,9 +57,9 @@ def create_occupancy_grid(occupany_grid, yaml_data):
     occ_grid_msg = OccupancyGrid()
     occ_grid_msg.header.frame_id = "map"
     occ_grid_msg.info = race_map
-    occ_grid_msg.data = grid_data
+    #occ_grid_msg.data = grid_data
 
-    return  occ_grid_msg ,occupany_grid
+    return  occupany_grid
 
 
 
@@ -81,7 +81,7 @@ def main():
 
     yaml_data = load_yaml('/home/autodrive_devkit/src/car_control/car_control/maps/iros_2024/iros_map_compete2024.yaml')
     occupancy_grid = pgm_to_occupancy('/home/autodrive_devkit/src/car_control/car_control/maps/iros_2024/iros_map_compete2024.pgm')
-    grid_msg , occupancy_grid = create_occupancy_grid(occupancy_grid,yaml_data)
+    occupancy_grid = create_occupancy_grid(occupancy_grid,yaml_data)
 
     visualization(occupancy_grid)
 
