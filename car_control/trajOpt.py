@@ -1,192 +1,145 @@
 import numpy as np
 import cvxpy as cp
 from scipy.ndimage import binary_dilation
+import matplotlib.pyplot as plt
 
-class TrajectoryOptimizer:
-    def __init__(self, config=None):
-        # Default configuration
-        self.config = {
-            'HORIZON': 50,        # Number of trajectory points
-            'MAX_VELOCITY': 2.0,  # Maximum velocity (m/s)
-            'MAX_ACCELERATION': 1.5,  # Maximum acceleration (m/s²)
-            'TRACK_WIDTH': 1.0,   # Track width (m)
-            'VEHICLE_LENGTH': 0.5,  # Vehicle length (m)
-            'VEHICLE_WIDTH': 0.3    # Vehicle width (m)
-        }
-        
-        # Update with user-provided config if any
-        if config:
-            self.config.update(config)
+# Configuration dictionary
+config = {
+    'HORIZON': 50,        # Number of trajectory points
+    'MAX_VELOCITY': 2.0,  # Maximum velocity (m/s)
+    'MAX_ACCELERATION': 1.5,  # Maximum acceleration (m/s²)
+    'TRACK_WIDTH': 1.0,   # Track width (m)
+    'VEHICLE_LENGTH': 0.5,  # Vehicle length (m)
+    'VEHICLE_WIDTH': 0.3    # Vehicle width (m)
+}
 
-    def preprocess_occupancy_grid(self, occupancy_grid):
-        """
-        Preprocess occupancy grid for trajectory optimization
-        
-        Args:
-        - occupancy_grid: 2D NumPy array (0 = free space, 1 = occupied)
-        
-        Returns:
-        - Processed safe space grid
-        """
-        # Identify free space
-        free_space = occupancy_grid == 0
-        
-        # Create safety margin by dilating occupied regions
-        safe_space = binary_dilation(free_space, iterations=2)
-        
-        return safe_space
+def preprocess_occupancy_grid(occupancy_grid):
+    """
+    Preprocess occupancy grid for trajectory optimization
+    
+    Args:
+    - occupancy_grid: 2D NumPy array (0 = free space, 1 = occupied)
+    
+    Returns:
+    - Processed safe space grid
+    """
+    free_space = occupancy_grid == 0
+    safe_space = binary_dilation(free_space, iterations=2)
+    return safe_space
 
-    def compute_initial_trajectory_guess(self, start_point, end_point):
-        """
-        Generate initial trajectory waypoints
-        
-        Args:
-        - start_point: [x, y] start coordinates
-        - end_point: [x, y] end coordinates
-        
-        Returns:
-        - Initial trajectory waypoints
-        """
-        N = self.config['HORIZON']
-        x_waypoints = np.linspace(start_point[0], end_point[0], N)
-        y_waypoints = np.linspace(start_point[1], end_point[1], N)
-        
-        return np.column_stack([x_waypoints, y_waypoints])
+def compute_initial_trajectory_guess(start_point, end_point, horizon):
+    """
+    Generate initial trajectory waypoints
+    
+    Args:
+    - start_point: [x, y] start coordinates
+    - end_point: [x, y] end coordinates
+    - horizon: Number of points in the trajectory
+    
+    Returns:
+    - Initial trajectory waypoints
+    """
+    x_waypoints = np.linspace(start_point[0], end_point[0], horizon)
+    y_waypoints = np.linspace(start_point[1], end_point[1], horizon)
+    return np.column_stack([x_waypoints, y_waypoints])
 
-    def optimize_trajectory(self, occupancy_grid, start_point, end_point):
-        """
-        Perform minimum time trajectory optimization
-        
-        Args:
-        - occupancy_grid: 2D NumPy array of track
-        - start_point: [x, y] starting coordinates
-        - end_point: [x, y] ending coordinates
-        
-        Returns:
-        - Optimized trajectory
-        - Velocity profile
-        - Total time
-        """
-        # Preprocess occupancy grid
-        safe_space = self.preprocess_occupancy_grid(occupancy_grid)
-        
-        # Configuration shortcuts
-        N = self.config['HORIZON']
-        v_max = self.config['MAX_VELOCITY']
-        a_max = self.config['MAX_ACCELERATION']
-        
-        # Optimization Variables
-        x = cp.Variable((N, 2))    # Position trajectory
-        v = cp.Variable(N)          # Velocity profile
-        t = cp.Variable()            # Total time
-        
-        # Initial trajectory guess
-        initial_trajectory = self.compute_initial_trajectory_guess(
-            start_point, end_point
-        )
-        
-        # Objective: Minimize total time
-        objective = cp.Minimize(t)
-        
-        # Constraints
-        constraints = [
-            # Time must be positive
-            t >= 0,
-            
-            # Velocity constraints
-            v >= 0,
-            v <= v_max,
-            
-            # Initial and final conditions
-            x[0] == start_point,
-            x[-1] == end_point,
-            v[0] == 0,  # Start from rest
-            v[-1] == 0  # End at rest
+def optimize_trajectory(occupancy_grid, start_point, end_point, config):
+    """
+    Perform minimum time trajectory optimization
+    
+    Args:
+    - occupancy_grid: 2D NumPy array of track
+    - start_point: [x, y] starting coordinates
+    - end_point: [x, y] ending coordinates
+    - config: Dictionary of configuration parameters
+    
+    Returns:
+    - Optimized trajectory
+    - Velocity profile
+    - Total time
+    """
+    safe_space = preprocess_occupancy_grid(occupancy_grid)
+    
+    # Configuration shortcuts
+    N = config['HORIZON']
+    v_max = config['MAX_VELOCITY']
+    a_max = config['MAX_ACCELERATION']
+    
+    # Optimization Variables
+    x = cp.Variable((N, 2))    # Position trajectory
+    v = cp.Variable(N)          # Velocity profile
+    t = cp.Variable()            # Total time
+    
+    # Initial trajectory guess
+    initial_trajectory = compute_initial_trajectory_guess(start_point, end_point, N)
+    
+    # Objective: Minimize total time
+    objective = cp.Minimize(t)
+    
+    # Constraints
+    constraints = [
+        t >= 0,
+        v >= 0,
+        v <= v_max,
+        x[0] == start_point,
+        x[-1] == end_point,
+        v[0] == 0,
+        v[-1] == 0
+    ]
+    
+    for k in range(N - 1):
+        constraints += [
+            x[k + 1, 0] == x[k, 0] + v[k] * (t / N),
+            x[k + 1, 1] == x[k, 1] + v[k] * (t / N),
+            cp.abs(v[k + 1] - v[k]) / (t / N) <= a_max
         ]
         
-        # Dynamic Constraints
-        for k in range(N-1):
-            # Position update
-            constraints += [
-                x[k+1, 0] == x[k, 0] + v[k] * (t / N),
-                x[k+1, 1] == x[k, 1] + v[k] * (t / N),
-                
-                # Acceleration constraints
-                cp.abs(v[k+1] - v[k]) / (t / N) <= a_max
-            ]
-            
-            # Obstacle Avoidance
-            # Ensure trajectory stays in safe space
-            grid_x = int(x[k, 0])
-            grid_y = int(x[k, 1])
-            
-            # Check if point is within grid and in free space
-            if (0 <= grid_x < safe_space.shape[0] and 
-                0 <= grid_y < safe_space.shape[1]):
-                constraints.append(
-                    safe_space[grid_x, grid_y] == 1
-                )
+        grid_x = int(x[k, 0])
+        grid_y = int(x[k, 1])
         
-        # Create and solve optimization problem
-        prob = cp.Problem(objective, constraints)
-        
-        try:
-            # Solve using ECOS solver
-            prob.solve(solver=cp.ECOS)
-            
-            return {
-                'trajectory': x.value,
-                'velocity_profile': v.value,
-                'total_time': t.value
-            }
-        except Exception as e:
-            print(f"Optimization failed: {e}")
-            return None
+        if 0 <= grid_x < safe_space.shape[0] and 0 <= grid_y < safe_space.shape[1]:
+            constraints.append(safe_space[grid_x, grid_y] == 1)
+    
+    # Solve the problem
+    prob = cp.Problem(objective, constraints)
+    
+    try:
+        prob.solve(solver=cp.ECOS)
+        return {
+            'trajectory': x.value,
+            'velocity_profile': v.value,
+            'total_time': t.value
+        }
+    except Exception as e:
+        print(f"Optimization failed: {e}")
+        return None
 
-    def visualize_trajectory(self, occupancy_grid, trajectory):
-        """
-        Visualize trajectory on occupancy grid
-        
-        Requires matplotlib
-        """
-        import matplotlib.pyplot as plt
-        
-        plt.figure(figsize=(10, 8))
-        plt.imshow(occupancy_grid, cmap='binary')
-        plt.plot(trajectory[:, 0], trajectory[:, 1], 'r-', linewidth=2)
-        plt.title('Optimized Trajectory')
-        plt.show()
+def visualize_trajectory(occupancy_grid, trajectory):
+    """
+    Visualize trajectory on occupancy grid
+    """
+    plt.figure(figsize=(10, 8))
+    plt.imshow(occupancy_grid, cmap='binary')
+    plt.plot(trajectory[:, 0], trajectory[:, 1], 'r-', linewidth=2)
+    plt.title('Optimized Trajectory')
+    plt.show()
 
 # Example Usage
 def main():
     # Create sample occupancy grid
     occupancy_grid = np.zeros((100, 100), dtype=int)
-    
-    # Add some obstacles (1 = obstacle)
     occupancy_grid[20:30, 20:30] = 1
     occupancy_grid[50:60, 50:60] = 1
-    
-    # Create optimizer
-    optimizer = TrajectoryOptimizer()
     
     # Define start and end points
     start_point = [10, 10]
     end_point = [90, 90]
     
     # Optimize trajectory
-    result = optimizer.optimize_trajectory(
-        occupancy_grid, 
-        start_point, 
-        end_point
-    )
+    result = optimize_trajectory(occupancy_grid, start_point, end_point, config)
     
     if result:
-        # Visualize trajectory
-        optimizer.visualize_trajectory(
-            occupancy_grid, 
-            result['trajectory']
-        )
-        
+        visualize_trajectory(occupancy_grid, result['trajectory'])
         print(f"Total Time: {result['total_time']:.2f}s")
 
 if __name__ == '__main__':
