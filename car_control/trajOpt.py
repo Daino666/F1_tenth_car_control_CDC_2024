@@ -126,15 +126,14 @@ def visualize_trajectory(occupancy_grid, trajectory):
 
 # Example Usage
 def main():
-    # Create sample occupancy grid
-    occupancy_grid = np.zeros((100, 100), dtype=int)
-    occupancy_grid[20:30, 20:30] = 1
-    occupancy_grid[50:60, 50:60] = 1
-    
+
+    # Load Occupancy grid 
+
     # Define start and end points
-    start_point = [10, 10]
-    end_point = [90, 90]
-    
+    occupancy_grid = 0.0
+    start_point = 0.0
+    end_point = 0.0
+
     # Optimize trajectory
     result = optimize_trajectory(occupancy_grid, start_point, end_point, config)
     
