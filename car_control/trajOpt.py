@@ -2,6 +2,7 @@ import numpy as np
 import cvxpy as cp
 from scipy.ndimage import binary_dilation
 import matplotlib.pyplot as plt
+import csv 
 
 # Configuration dictionary
 config = {
@@ -13,6 +14,16 @@ config = {
     'VEHICLE_WIDTH': 0.3    # Vehicle width (m)
 }
 
+
+
+def load_occupancy():
+    with open("occupancy_grid.csv", "r") as csvfile:
+        reader = csv.reader(csvfile)
+        occupancy_grid = np.array([list(map(float, row)) for row in reader])
+    return occupancy_grid
+
+
+
 def preprocess_occupancy_grid(occupancy_grid):
     """
     Preprocess occupancy grid for trajectory optimization
@@ -23,8 +34,10 @@ def preprocess_occupancy_grid(occupancy_grid):
     Returns:
     - Processed safe space grid
     """
-    free_space = occupancy_grid == 0
-    safe_space = binary_dilation(free_space, iterations=2)
+
+
+    
+    safe_space = binary_dilation(occupancy_grid, iterations=2)
     return safe_space
 
 def compute_initial_trajectory_guess(start_point, end_point, horizon):
@@ -124,11 +137,31 @@ def visualize_trajectory(occupancy_grid, trajectory):
     plt.title('Optimized Trajectory')
     plt.show()
 
+
+
+def visualization(visual):
+
+    visual = visual.astype(float)
+# Visualize the occupancy grid
+    plt.imshow(visual, cmap="viridis", origin="upper")
+    plt.colorbar(label="Occupancy Probability")
+    plt.title("Occupancy Grid Visualization")
+    plt.xlabel("X-axis")
+    plt.ylabel("Y-axis")
+    plt.show()
+
 # Example Usage
 def main():
 
     # Load Occupancy grid 
+    occpancy_grid = load_occupancy()
 
+    proccesed_occupancy  =   preprocess_occupancy_grid(occpancy_grid)
+
+
+    visualization(proccesed_occupancy)
+
+    """
     # Define start and end points
     occupancy_grid = 0.0
     start_point = 0.0
@@ -141,5 +174,7 @@ def main():
         visualize_trajectory(occupancy_grid, result['trajectory'])
         print(f"Total Time: {result['total_time']:.2f}s")
 
+
+    """
 if __name__ == '__main__':
     main()

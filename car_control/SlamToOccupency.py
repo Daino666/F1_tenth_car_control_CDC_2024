@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import yaml
 from PIL import Image 
+import csv
 
 
 
@@ -44,20 +45,16 @@ def create_occupancy_grid(occupany_grid, yaml_data):
         for x in range(race_map.width):
 
             if occupany_grid[y][x] >= occupied_thresh:
-                occupany_grid[y][x] = 1
-
-            elif occupany_grid[y][x] <= free_thresh:
                 occupany_grid[y][x] = 0
 
+            elif occupany_grid[y][x] <= free_thresh:
+                occupany_grid[y][x] = 1
 
-    
-    grid_data = occupany_grid.flatten().tolist()
-    grid_data = np.array(grid_data)
 
-    occ_grid_msg = OccupancyGrid()
-    occ_grid_msg.header.frame_id = "map"
-    occ_grid_msg.info = race_map
-    #occ_grid_msg.data = grid_data
+    with open("occupancy_grid.csv", "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        for row in occupany_grid:
+             writer.writerow(row)
 
     return  occupany_grid
 
@@ -68,12 +65,19 @@ def create_occupancy_grid(occupany_grid, yaml_data):
 
 
 
-def visualization(occ_grid):
-    plt.imshow(occ_grid, cmap='YlGnBu')
-    plt.colorbar(label='Occupancy Probability')
-    plt.title('Occupancy Grid')
-    plt.show()    
+def visualization():
 
+    with open("occupancy_grid.csv", "r") as csvfile:
+        reader = csv.reader(csvfile)
+        occupancy_grid = np.array([list(map(float, row)) for row in reader])
+
+# Visualize the occupancy grid
+    plt.imshow(occupancy_grid, cmap="viridis", origin="upper")
+    plt.colorbar(label="Occupancy Probability")
+    plt.title("Occupancy Grid Visualization")
+    plt.xlabel("X-axis")
+    plt.ylabel("Y-axis")
+    plt.show()
 
 
 
@@ -83,7 +87,7 @@ def main():
     occupancy_grid = pgm_to_occupancy('/home/autodrive_devkit/src/car_control/car_control/maps/iros_2024/iros_map_compete2024.pgm')
     occupancy_grid = create_occupancy_grid(occupancy_grid,yaml_data)
 
-    visualization(occupancy_grid)
+    visualization()
 
 
 
