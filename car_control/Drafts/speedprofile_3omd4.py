@@ -2,30 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Vehicle and trajectory parameters
-a_max = 2.0  # Maximum acceleration (m/s^2)
+a_max = 8.83  # Maximum acceleration (m/s^2)
 a_lat_max = 3.0  # Maximum lateral acceleration (m/s^2)
-v_max = 5.0  # Maximum velocity (m/s)
+v_max = 22.88  # Maximum velocity (m/s)
 
-def compute_curvature(trajectory):
-    """
-    Compute the curvature of the trajectory.
-    
-    Args:
-        trajectory (numpy.ndarray): Nx2 array of [x, y] waypoints.
-    
-    Returns:
-        numpy.ndarray: N array of curvature values.
-    """
-    x = trajectory[:, 0]
-    y = trajectory[:, 1]
-    dx = np.gradient(x)
-    dy = np.gradient(y)
-    ddx = np.gradient(dx)
-    ddy = np.gradient(dy)
-    
-    curvature = np.abs(ddx * dy - ddy * dx) / (dx**2 + dy**2)**1.5
-    curvature[np.isnan(curvature)] = 0  # Handle division by zero
-    return curvature
+
 
 def compute_speed_profile(trajectory, a_max, a_lat_max, v_max):
     """
@@ -94,7 +75,9 @@ def plot_speed_profile(trajectory, speed_profile):
 if __name__ == "__main__":
     # Example trajectory (circle)
     theta = np.linspace(0, 2 * np.pi, 100)
-    trajectory = np.column_stack((np.cos(theta), np.sin(theta)))
+    trajectory = np.array([[0, 0], [1, 1], [2, 0], [3, 1], [4, 0]])
+
+
     
     # Compute speed profile
     speed_profile = compute_speed_profile(trajectory, a_max, a_lat_max, v_max)
