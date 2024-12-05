@@ -6,7 +6,26 @@ a_max = 8.83  # Maximum acceleration (m/s^2)
 a_lat_max = 3.0  # Maximum lateral acceleration (m/s^2)
 v_max = 22.88  # Maximum velocity (m/s)
 
-
+def compute_curvature(trajectory):
+    """
+    Compute the curvature of the trajectory.
+    
+    Args:
+        trajectory (numpy.ndarray): Nx2 array of [x, y] waypoints.
+    
+    Returns:
+        numpy.ndarray: N array of curvature values.
+    """
+    x = trajectory[:, 0]
+    y = trajectory[:, 1]
+    dx = np.gradient(x)
+    dy = np.gradient(y)
+    ddx = np.gradient(dx)
+    ddy = np.gradient(dy)
+    
+    curvature = np.abs(ddx * dy - ddy * dx) / (dx**2 + dy**2)**1.5
+    curvature[np.isnan(curvature)] = 0  # Handle division by zero
+    return curvature
 
 def compute_speed_profile(trajectory, a_max, a_lat_max, v_max):
     """
