@@ -15,14 +15,21 @@ def load_yaml(yaml_path):
     with open(yaml_path, 'r') as file:
         return yaml.safe_load(file)
     
-def pgm_to_occupancy(pgm_path):
+def pgm_to_occupancy_and_masking(pgm_path):
 
     img = Image.open(pgm_path)  
 
     grid = np.array(img)
+    occupancy_grid = grid 
 
-    occupancy_grid = grid / grid.max()
+    for y in range(occupancy_grid.shape[0]):
+        for x in (range(occupancy_grid.shape[1])):
 
+            if grid[y][x]== 254:
+                occupancy_grid[y][x] =  0
+            else:
+                occupancy_grid[y][x] = 1
+    
     return occupancy_grid
 
 
@@ -51,21 +58,19 @@ def create_occupancy_grid(occupany_grid, yaml_data):
                 occupany_grid[y][x] = 1
 
 
-    with open("occupancy_grid.csv", "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-        for row in occupany_grid:
-             writer.writerow(row)
 
     return  occupany_grid
 
 
+def create_CSV(CSV):
+        with open("occupancy_grid.csv", "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            for row in CSV:
+                 writer.writerow(row)
 
 
 
-
-
-
-def visualization():
+def Visulaize_CSV():
 
     with open("occupancy_grid.csv", "r") as csvfile:
         reader = csv.reader(csvfile)
@@ -84,10 +89,13 @@ def visualization():
 def main():
 
     yaml_data = load_yaml('/home/autodrive_devkit/src/car_control/car_control/maps/iros_2024/iros_map_compete2024.yaml')
-    occupancy_grid = pgm_to_occupancy('/home/autodrive_devkit/src/car_control/car_control/maps/iros_2024/iros_map_compete2024.pgm')
-    occupancy_grid = create_occupancy_grid(occupancy_grid,yaml_data)
+    occupancy_grid = pgm_to_occupancy_and_masking('/home/autodrive_devkit/src/car_control/car_control/maps/iros_2024/iros_map_compete2024.pgm')
 
-    visualization()
+
+    #occupancy_grid = create_occupancy_grid(occupancy_grid,yaml_data)
+    
+    create_CSV(occupancy_grid)
+    Visulaize_CSV()
 
 
 
