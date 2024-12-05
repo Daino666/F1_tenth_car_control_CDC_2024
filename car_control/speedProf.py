@@ -21,7 +21,7 @@ def compute_speed_profile(trajectory, a_max, a_lat_max, v_max):
     Returns:
         numpy.ndarray: N array of speeds (m/s).
     """
-    curvature = compute_curvature(trajectory)
+    curvature = compute_curvature(trajectory)#############################################taken from moataz
     v_curvature = np.sqrt(a_lat_max / (curvature + 1e-6))  # Avoid division by zero
     v_curvature = np.clip(v_curvature, 0, v_max)
     

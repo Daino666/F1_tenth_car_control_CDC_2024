@@ -2,7 +2,7 @@ import rclpy
 import math
 import numpy as np
 from sensor_msgs.msg import LaserScan, Imu
-from std_msgs.msg import Float32, Int32
+from std_msgs.msg import Float32
 
 global lap_count, throttle, steering_angle
 throttle = Float32()
