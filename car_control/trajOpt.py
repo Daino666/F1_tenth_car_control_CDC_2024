@@ -8,6 +8,11 @@ import csv
 import skimage.morphology as morphology
 import skimage.graph as graph
 import scipy.ndimage as ndimage
+import cv2
+import numpy as np
+import skimage.morphology as morph
+from scipy.optimize import minimize
+
 
 # Configuration dictionary
 config = {
@@ -45,23 +50,58 @@ def preprocess_occupancy_grid(occupancy_grid):
 
 
 
-def compute_centerline_and_boundires(processed_occupancy):
-    """
-    Generate initial trajectory waypoints
+
+def extract_centerline(occupancy_grid):
+    # Convert grid to binary image
+    binary = (occupancy_grid == 0).astype(np.uint8)
     
-    Args:
-    - start_point: [x, y] start coordinates
-    - end_point: [x, y] end coordinates
-    - horizon: Number of points in the trajectory
+    # Skeletonize the map
+    skeleton = morph.skeletonize(binary)
+    
+    # Find centerline points
+    centerline_points = np.column_stack(np.where(skeleton))
+    
+    # Calculate distance to nearest wall
+    distances = cv2.distanceTransform(1 - binary, cv2.DIST_L2, 5)
+    
+    # Get wall distances for centerline points
+    wall_distances = distances[centerline_points[:, 0], centerline_points[:, 1]]
+    
+
+    plt.imshow(distances, cmap="viridis", origin="upper")
+    plt.colorbar(label="Occupancy Probability")
+    plt.title("Occupancy Grid Visualization")
+    plt.xlabel("X-axis")
+    plt.ylabel("Y-axis")
+    plt.show()
+
+    
+    return centerline_points, wall_distances
+
+
+def calculate_boundary_distances(occupancy_grid, center_line):
+    """
+    Calculate distances from center line points to nearest boundaries.
+    
+    Parameters:
+    -----------
+    occupancy_grid : numpy.ndarray
+        2D binary grid where 1 represents occupied space and 0 represents free space.
+    center_line : numpy.ndarray
+        Coordinates of the center line path
     
     Returns:
-    - Initial trajectory waypoints
+    --------
+    distances : numpy.ndarray
+        Distances from each center line point to the nearest boundary
     """
-
-
-
-
-
+    # Compute distance transform
+    distance_transform = ndimage.distance_transform_edt(1 - occupancy_grid)
+    
+    # Extract distances for center line points
+    distances = distance_transform[center_line[:, 0], center_line[:, 1]]
+    
+    return distances
 
 
 
@@ -136,6 +176,9 @@ def optimize_trajectory(occupancy_grid, start_point, end_point, config):
         print(f"Optimization failed: {e}")
         return None
 
+
+
+
 def visualize_trajectory(occupancy_grid, trajectory):
     """
     Visualize trajectory on occupancy grid
@@ -160,11 +203,56 @@ def visualization(visual):
     plt.show()
 
 
-
+def visualize_occupancy_grid(occupancy_grid, center_line=None, boundary_distance=None):
+    """
+    Visualize the occupancy grid with optional center line and boundary distances.
+    
+    Parameters:
+    -----------
+    occupancy_grid : numpy.ndarray
+        2D binary grid where 1 represents occupied space and 0 represents free space.
+    center_line : numpy.ndarray, optional
+        Coordinates of the center line path
+    boundary_distance : numpy.ndarray, optional
+        Distances from each center line point to the nearest boundary
+    """
+    plt.figure(figsize=(12, 6))
+    
+    # Original Occupancy Grid
+    plt.subplot(121)
+    plt.imshow(occupancy_grid, cmap='binary', interpolation='nearest')
+    plt.title('Occupancy Grid')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    
+    # Occupancy Grid with Center Line
+    plt.subplot(122)
+    plt.imshow(occupancy_grid, cmap='binary', interpolation='nearest')
+    
+    if center_line is not None and center_line.ndim == 2 and center_line.shape[1] == 2:
+        plt.plot(center_line[:, 1], center_line[:, 0], 'r.', label='Center Line')
+        if boundary_distance is not None:
+            plt.scatter(center_line[:, 1], center_line[:, 0], c=boundary_distance, cmap='viridis')
+            plt.colorbar(label='Boundary Distance')
+        plt.legend()
+    else:
+        plt.title('No Center Line Found')
+    
+    plt.title('Center Line and Boundary Distances')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    
+    plt.tight_layout()
+    plt.show()
+    ()
 
 def main():
-    # Create a sample occupancy grid
-    pass
+    occupancy_grid = load_occupancy()
+    heatmap = preprocess_occupancy_grid(occupancy_grid)
+    center_line = extract_centerline(heatmap)
+    boundry_distance = calculate_boundary_distances(heatmap, center_line)
+    visualize_occupancy_grid(heatmap, boundry_distance)
+    
 
 if __name__ == "__main__":
     main()
