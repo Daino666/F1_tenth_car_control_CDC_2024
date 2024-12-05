@@ -1,8 +1,13 @@
 import numpy as np
 import cvxpy as cp
 from scipy.ndimage import binary_dilation
+from scipy.ndimage import distance_transform_edt
+from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 import csv 
+import skimage.morphology as morphology
+import skimage.graph as graph
+import scipy.ndimage as ndimage
 
 # Configuration dictionary
 config = {
@@ -33,14 +38,14 @@ def preprocess_occupancy_grid(occupancy_grid):
     
     Returns:
     - Processed safe space grid
-    """
-
-
-    
+    """    
     safe_space = binary_dilation(occupancy_grid, iterations=2)
+    safe_space = safe_space.astype(float)
     return safe_space
 
-def compute_initial_trajectory_guess(start_point, end_point, horizon):
+
+
+def compute_centerline_and_boundires(processed_occupancy):
     """
     Generate initial trajectory waypoints
     
@@ -52,9 +57,13 @@ def compute_initial_trajectory_guess(start_point, end_point, horizon):
     Returns:
     - Initial trajectory waypoints
     """
-    x_waypoints = np.linspace(start_point[0], end_point[0], horizon)
-    y_waypoints = np.linspace(start_point[1], end_point[1], horizon)
-    return np.column_stack([x_waypoints, y_waypoints])
+
+
+
+
+
+
+
 
 def optimize_trajectory(occupancy_grid, start_point, end_point, config):
     """
@@ -150,31 +159,12 @@ def visualization(visual):
     plt.ylabel("Y-axis")
     plt.show()
 
-# Example Usage
+
+
+
 def main():
+    # Create a sample occupancy grid
+    pass
 
-    # Load Occupancy grid 
-    occpancy_grid = load_occupancy()
-
-    proccesed_occupancy  =   preprocess_occupancy_grid(occpancy_grid)
-
-
-    visualization(proccesed_occupancy)
-
-    """
-    # Define start and end points
-    occupancy_grid = 0.0
-    start_point = 0.0
-    end_point = 0.0
-
-    # Optimize trajectory
-    result = optimize_trajectory(occupancy_grid, start_point, end_point, config)
-    
-    if result:
-        visualize_trajectory(occupancy_grid, result['trajectory'])
-        print(f"Total Time: {result['total_time']:.2f}s")
-
-
-    """
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
