@@ -51,7 +51,8 @@ def compute_speed_profile(trajectory, a_max, a_lat_max, v_max):
     # Forward pass: Respect acceleration limits
     N = len(trajectory)
     speed = np.zeros(N)
-    speed[0] = 0  # Start from rest
+    initial_speed = 0
+    speed[0] = initial_speed  # Start from rest
     for i in range(1, N):
         d = np.linalg.norm(trajectory[i] - trajectory[i - 1])  # Distance
         speed[i] = min(v_curvature[i], np.sqrt(speed[i - 1]**2 + 2 * a_max * d))
@@ -60,6 +61,7 @@ def compute_speed_profile(trajectory, a_max, a_lat_max, v_max):
     for i in range(N - 2, -1, -1):
         d = np.linalg.norm(trajectory[i + 1] - trajectory[i])  # Distance
         speed[i] = min(speed[i], np.sqrt(speed[i + 1]**2 + 2 * a_max * d))
+        initial_speed = speed[i]
     
     return speed
 
