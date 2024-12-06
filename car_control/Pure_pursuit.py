@@ -2,19 +2,11 @@ import csv
 import rclpy
 import numpy as np
 from std_msgs.msg import Float32, String
-from geographic_msgs.msg import Point
+from geometry_msgs.msg import Point
 import tf2_geometry_msgs
 from tf2_ros import TransformListener, Buffer
 from geometry_msgs.msg import Quaternion
 from tf2_ros import TransformException
-
-
-'''
-I have changed the path of the file to read the Test.csv
-       commented some unecessaryy subscribers
-       changed the wheel_base to 0.3240 obtained from Technical guid
-       changed all occurunces of rospy to rclpy
-'''
 
 
 def csv_reading(file_path, column_name):
@@ -26,8 +18,6 @@ def csv_reading(file_path, column_name):
                 column_data.append(float(row[column_name]))
     return column_data
 
-
-
 def normalize_angle(angle):
     while angle > np.pi:
         angle -= 2 * np.pi
@@ -35,9 +25,16 @@ def normalize_angle(angle):
         angle += 2 * np.pi
     return angle
 
+def convert_to_steer_Command(steering):
+    command = Float32()
+    command = np.clip(steering, -30, 30)
+    command/=30
+    return command
+
+
 
 def callvack(Point):
-    global C_pose, yaw, flag, counter, num_path_values, path
+    global C_pose, yaw, flag, counter, path
 
     C_pose = [0.0,0.0]
     C_pose[0] = Point.x
@@ -50,7 +47,7 @@ def callvack(Point):
 
 
 
-    for i in range (0, num_path_values):
+    for i in range (path.shape[0]):
         dx = path[i][0] - C_pose[0]
         dy = path[i][1] - C_pose[1]
         distance = np.sqrt(dx**2 + dy**2)
@@ -84,32 +81,20 @@ def calculate_curv(point, wheel_base):
     # Calculate curvature
     curvature = 2.0 * local_y  / (local_x**2 + local_y**2)
     
-
-    #min_curvature= .395
-    max_steering_angle= 19
-
-    
-    # Limit curvature to avoid extreme values
-    #curvature = np.clip(curvature, -min_curvature, min_curvature)
-    # Calculate steering angle
     steering_angle = np.arctan2(wheel_base * curvature, 1.0)
     # Convert to degrees and limit the steering angle
     steering_angle_deg = np.degrees(steering_angle)
-    steering_angle_deg *=-1
-
-
-
-    steering_angle_deg = np.clip(steering_angle_deg, -20.5, max_steering_angle)
 
     rclpy.loginfo(steering_angle_deg)
 
     steering_pub.publish(steering_angle_deg)
     
-    cmd_pub.publish(6) #Tunable but not that important at first
+    cmd_pub.publish(6) 
 
 
 def main(arg = None):
-   
+    global path, wheel_base, node, cmd_pub, steering_pub
+
     # Paramaeters 
     wheel_base = 0.3240
     file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'
@@ -118,9 +103,9 @@ def main(arg = None):
     x_values = csv_reading(file_path, column_x)  
     y_values = csv_reading(file_path, column_y)   
     path = list(zip(x_values, y_values))
+    path = np.array(path)
 
     #Initialize ROS2
-    global node, cmd_pub, steering_pub
     rclpy.init(args = arg)
 
     node=rclpy.create_node('PID_wall_following')
@@ -131,16 +116,11 @@ def main(arg = None):
     node.create_subscription( Point,"/autodrive/f1tenth_1/ips", callvack)
 
 
-    #publishing a
-
-
-
 
 
 if __name__ == '__main__':
+
     try:
         main()
-        rclpy.spin()
-
-    except rclpy.ROSInterruptException:
+    except KeyboardInterrupt:
         pass
