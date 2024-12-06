@@ -3,8 +3,8 @@ from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 
 # Vehicle and trajectory parameters
-a_max = 8.83  # Maximum acceleration (m/s^2)
-a_lat_max = 3  # Maximum lateral acceleration (m/s^2) try
+a_max = 5.2  # Maximum acceleration (m/s^2)
+a_lat_max = 3.6  # Maximum lateral acceleration (m/s^2) try
 v_max = 22.88  # Maximum velocity (m/s)
 
 def compute_curvature(trajectory):#will be removed
