@@ -24,7 +24,7 @@ config = {
 }
 
 
-def compute_inner_outer_distances(occupancy_grid, skeleton_points):
+def compute_inner_outer_distances(occupancy_grid, sCenterLine_points):
     """
     Compute the inner and outer boundary distances for each point on the centerline.
 
@@ -51,7 +51,7 @@ def compute_inner_outer_distances(occupancy_grid, skeleton_points):
     # Compute distances from each skeleton point to inner and outer boundaries
     inner_distances = []
     outer_distances = []
-    for point in skeleton_points:
+    for point in sCenterLine_points:
         inner_dist = distance.cdist([point], inner_coords).min()
         outer_dist = distance.cdist([point], outer_coords).min()
         inner_distances.append(inner_dist)
@@ -127,20 +127,20 @@ def extract_centerline(occupancy_grid):
 
 def skeleton_coordinates(skeleton):
     y_coords, x_coords = np.nonzero(skeleton)
-    skeleton_points = np.column_stack((x_coords, y_coords))
+    sCenterLine_points = np.column_stack((x_coords, y_coords))
 
     # Create a KDTree to efficiently find nearest neighbors for ordering points
-    tree = KDTree(skeleton_points)
-    ordered_points = [skeleton_points[0]]
+    tree = KDTree(sCenterLine_points)
+    ordered_points = [sCenterLine_points[0]]
     visited = {0}
 
-    while len(ordered_points) < len(skeleton_points):
+    while len(ordered_points) < len(sCenterLine_points):
         last_point = ordered_points[-1]
-        distances, indices = tree.query(last_point, k=len(skeleton_points))  # Find all neighbors
+        distances, indices = tree.query(last_point, k=len(sCenterLine_points))  # Find all neighbors
         for idx in indices:
             if idx not in visited:
                 visited.add(idx)
-                ordered_points.append(skeleton_points[idx])
+                ordered_points.append(sCenterLine_points[idx])
                 break
         else:
             # If no new point is found, break to avoid an infinite loop
@@ -397,7 +397,7 @@ def main():
 
     skeleton = png_to_skeleton(skeleton_path)
 
-    keleton_points = skeleton_coordinates(skeleton)
+    CenterLine_points = skeleton_coordinates(skeleton)
 
     inner_bound = png_to_skeleton(inner_bound_path)
     inner_bound_points = skeleton_coordinates(inner_bound)
@@ -405,7 +405,7 @@ def main():
     outer_bound = png_to_skeleton(outer_bound_path)
     outer_bound_points = skeleton_coordinates(outer_bound)
 
-    plot_three_lines(keleton_points,inner_bound_points,outer_bound_points)
+    plot_three_lines(CenterLine_points,inner_bound_points,outer_bound_points)
 
 
     
