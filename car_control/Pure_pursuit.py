@@ -5,7 +5,12 @@ import numpy as np
 from std_msgs.msg import Float32, String
 #from tf.transformations import euler_from_quaternion
 import time 
-
+'''
+I have changed the path of the file to read the Test.csv
+       commented some unecessaryy subscribers
+       changed the wheel_base to 0.3240 obtained from Technical guid
+       changed all occurunces of rospy to rclpy
+'''
 counter = 0
 flag = 'y'
 
@@ -19,7 +24,7 @@ def csv_reading(file_path, column_name):
     return column_data
 
 
-file_path = '/home/daino/workspace/src/real_time/scripts/wp_file.csv'
+file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'
 column_x = 'positions_x_odom'
 column_y = 'positions_y_odom'
 
