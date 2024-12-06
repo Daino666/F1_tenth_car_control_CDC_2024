@@ -3,8 +3,6 @@ import cvxpy as cp
 from scipy.ndimage import binary_dilation 
 import csv 
 from scipy.spatial import KDTree
-from skimage.measure import label
-from scipy.ndimage import convolve
 from skimage.io import imsave
 from PIL import Image
 from skimage.morphology import skeletonize
