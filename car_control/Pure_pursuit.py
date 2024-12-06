@@ -1,134 +1,254 @@
-import os
-import rclpy
-from rclpy.node import Node
-from std_msgs.msg import Float32
+#!/usr/bin/env python 
 import csv
-import math
+import rclpy
+import numpy as np
+from std_msgs.msg import Float32, String
+#from tf.transformations import euler_from_quaternion
+import time 
 
-# Global variables
-path_x_coords = []
-path_y_coords = []
-num_path_values = 0
-waypoints = []
-vehicle_position = (0.0, 0.0)
-vehicle_orientation = 0.0
-publishers = {}
-
+counter = 0
+flag = 'y'
 
 def csv_reading(file_path, column_name):
-    """Reads a specific column from a CSV file and returns it as a list of floats."""
-    data = []
-    try:
-        with open(file_path, 'r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
-                data.append(float(row[column_name]))
-    except Exception as e:
-        print(f"Error reading CSV file: {e}")
-    return data
+    column_data = []
+    with open(file_path, mode='r') as file:
+        csv_reader = csv.DictReader(file)
+        for row in csv_reader:
+            if column_name in row:
+                column_data.append(float(row[column_name]))
+    return column_data
 
 
-def initialize_node():
-    """Initializes the ROS 2 node and sets up publishers and subscribers."""
-    global path_x_coords, path_y_coords, num_path_values, waypoints, publishers
-    rclpy.init()
-    node = Node('pure_pursuit')
+file_path = '/home/daino/workspace/src/real_time/scripts/wp_file.csv'
+column_x = 'positions_x_odom'
+column_y = 'positions_y_odom'
 
-    # Publishers
-    publishers = {
-        "steering": node.create_publisher(Float32, '/autodrive/f1tenth_1/steering', 10),
-        "throttle": node.create_publisher(Float32, '/autodrive/f1tenth_1/throttle', 10),
-    }
+x_values = csv_reading(file_path, column_x)  
+y_values = csv_reading(file_path, column_y)   
+num_path_values  = len(x_values)
 
-    # Subscribers
-    node.create_subscription(Float32, '/autodrive/f1tenth_1/steering_command', process_steering_command, 10)
-    node.create_subscription(Float32, '/autodrive/f1tenth_1/throttle_command', process_throttle_command, 10)
-
-    # Load Path
-    file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'
-    path_x_coords = csv_reading(file_path, 'positions_x_odom')
-    path_y_coords = csv_reading(file_path, 'positions_y_odom')
-    num_path_values = len(path_x_coords)
-    waypoints = list(zip(path_x_coords, path_y_coords))
-
-    node.get_logger().info("Pure Pursuit Node Initialized")
-    return node
+path = list(zip(x_values, y_values))
 
 
-def process_steering_command(msg):
-    """Processes steering command data (if required)."""
-    pass
+def init_node(arg = None):
+
+    global cmd_pub, steering_pub
+
+    rclpy.init(args = arg)
+    node=rclpy.create_node('PID_wall_following')
+
+    ##rclpy.Subscriber('/aft_mapped_adjusted', Odometry, callvack)
+    ##rclpy.Subscriber('/depth', Float32, manage_depth)
+    ##rclpy.Subscriber('/color', String, manage_color)
 
 
-def process_throttle_command(msg):
-    """Processes throttle command data (if required)."""
-    pass
+    cmd_pub = rclpy.Publisher("/autodrive/f1tenth_1/throttle", Float32, queue_size=0) 
+
+    steering_pub = rclpy.Publisher("/autodrive/f1tenth_1/steering", Float32, queue_size=0)
+
+    rate = rclpy.Rate(10)
+    rate.sleep()
 
 
-def compute_distance_and_angle(target, position, orientation):
-    """Computes the distance and angle to a target waypoint."""
-    dx = target[0] - position[0]
-    dy = target[1] - position[1]
-    distance = math.sqrt(dx ** 2 + dy ** 2)
-    angle_to_target = math.degrees(math.atan2(dy, dx))
-    angle_diff = (angle_to_target - math.degrees(orientation) + 360) % 360
-    if angle_diff > 180:
-        angle_diff -= 360
-    return distance, angle_diff
+wheel_base = 0.3240
+
+def stop():
+    while True:
+        cmd_pub.publish(0.0)
+        steering_pub.publish(0.0)
+
+def normalize_angle(angle):
+    while angle > np.pi:
+        angle -= 2 * np.pi
+    while angle < -np.pi:
+        angle += 2 * np.pi
+    return angle
 
 
-def select_target_waypoint():
-    """Selects the next waypoint based on the current vehicle position and orientation."""
-    for waypoint in waypoints:
-        distance, angle_diff = compute_distance_and_angle(waypoint, vehicle_position, vehicle_orientation)
-        if 3.5 <= distance <= 4.0 and abs(angle_diff) <= 60:
-            return waypoint
-    return None
+def manage_depth(msg):
+    global depth
+    depth = msg.data
+    #rclpy.loginfo(depth)
+    
+def manage_color(msg):
+    global color
+    color = msg.data
+
+def callvack(odom):
+    global C_pose, yaw, flag, counter, num_path_values, path
+
+    C_pose = [0.0,0.0]
+    C_pose[0] = odom.pose.pose.position.x
+    C_pose[1] = odom.pose.pose.position.y
+    orientation_q = odom.pose.pose.orientation
+    z_orien = odom.pose.pose.orientation.z
+    orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
+    #(_, _, yaw) = euler_from_quaternion(orientation_list)
 
 
-def compute_steering_command(target_waypoint):
-    """Computes the steering command for the vehicle to follow the target waypoint."""
-    if not target_waypoint:
-        return 0.0
-    local_x = target_waypoint[0] - vehicle_position[0]
-    local_y = target_waypoint[1] - vehicle_position[1]
-    if local_x == 0:
-        local_x = 0.001  # Prevent division by zero
-    curvature = 2 * local_y / (local_x ** 2 + local_y ** 2)
-    steering_angle = math.atan(curvature)
-    return steering_angle
+    if int(C_pose[1]) == 0 and flag == 'y':
+        if counter !=7:
+            counter+=1 
+            rclpy.loginfo(counter)
+            flag='n'
+        else:
+            pass #-------------------------------------
+
+    if int(C_pose[1]) != 0:
+        flag = 'y'
 
 
-def publish_drive_commands():
-    """Publishes the drive commands (steering and throttle)."""
-    target_waypoint = select_target_waypoint()
-    steering_angle = compute_steering_command(target_waypoint)
+    for i in range (0, num_path_values):
+        dx = path[i][0] - C_pose[0]
+        dy = path[i][1] - C_pose[1]
+        distance = np.sqrt(dx**2 + dy**2)
+        waypoint_angle = np.arctan2(dy, dx)
+        angle_diff = abs(normalize_angle(waypoint_angle - yaw))
+        angle_diff = np.degrees (angle_diff)
 
-    # Throttle calculation based on steering angle
-    steering_angle_deg = math.degrees(steering_angle)
-    velocity = 4 * (1 - abs(steering_angle_deg / 40))
-    velocity = max(0.5, min(velocity, 4))
-
-    # Publish commands
-    publishers["steering"].publish(Float32(data=steering_angle))
-    publishers["throttle"].publish(Float32(data=velocity))
+        if distance >= 3.5 and  distance <= 4 and angle_diff>=0  and  angle_diff<=60: #tunable
+            point =  path[i]
+            calculate_curv(point)
+            return
 
 
-def main():
-    """Main entry point for the pure pursuit node."""
-    node = initialize_node()
-    rate = node.create_rate(10)  # 10 Hz
+'''
 
-    try:
-        while rclpy.ok():
-            publish_drive_commands()
-            rclpy.spin_once(node, timeout_sec=0.1)
-            rate.sleep()
-    except KeyboardInterrupt:
-        node.get_logger().info("Shutting down Pure Pursuit Node.")
-    finally:
-        rclpy.shutdown()
+    if C_pose[1] >= -2.375 and C_pose[1] <= 2.375 and yaw <=0:
+        rclpy.loginfo("left to right")
+        waypoints = left_to_right
+        for point in waypoints:
+            if point[1] < (C_pose[1] - look_ahead1) and point[1] >= (C_pose[1] - look_ahead1-2):
+                calculate_curv(point)
+                return
+
+    if C_pose[1]>= -2.375 and C_pose[1]<= 2.375 and yaw > 0:
+        rclpy.loginfo("right to left")
+
+        waypoints = right_to_left
+        for point in waypoints:
+            if point[1] > (C_pose[1] + look_ahead1) and point[1] <= (C_pose[1] + look_ahead1+2):
+                calculate_curv(point)
+                return
+    
+
+    if C_pose[1] > 2.375 :
+        rclpy.loginfo("left circle")
+
+        cy = 8.56
+        cx = 0
+        angle = np.arctan2(C_pose[1]-cy, C_pose[0]-cx)
+        lookAhead_angle = angle + look_ahead2 / radius
+        lookAhead_point = (cx+(radius * np.cos(lookAhead_angle)), cy+(radius * np.sin(lookAhead_angle)))
+        calculate_curv(lookAhead_point)
+    
+    if C_pose[1] < -2.375 :
+        rclpy.loginfo("right circle")
+
+        cy = - 8.56
+        cx = 0
+        angle = np.arctan2(C_pose[1]-cy, C_pose[0]-cx)
+        lookAhead_angle = angle - look_ahead2 / radius
+        lookAhead_point = (cx+(radius * np.cos(lookAhead_angle)), (radius * np.sin(lookAhead_angle))+cy)
+
+        calculate_curv(lookAhead_point)
+        '''
+
+
+def calculate_curv(point):
+    global depth, color
+   # Calculate relative position 
+    dx = point[0] - C_pose[0]
+    dy = point[1] - C_pose[1]
+
+    # Transform to local coordinates
+    cos_yaw = np.cos(yaw)
+    sin_yaw = np.sin(yaw)
+    local_x = cos_yaw * dx +sin_yaw * dy
+    local_y = -sin_yaw * dx + cos_yaw * dy
+    
+    # Avoid division by zero or very small numbers
+    if abs(local_x) < 1e-6:
+        local_x = 1e-6 if local_x >= 0 else -1e-6
+    
+    # Calculate curvature
+    curvature = 2.0 * local_y  / (local_x**2 + local_y**2)
+    
+
+    #min_curvature= .395
+    max_steering_angle= 19
+
+    
+    # Limit curvature to avoid extreme values
+    #curvature = np.clip(curvature, -min_curvature, min_curvature)
+    # Calculate steering angle
+    steering_angle = np.arctan2(wheel_base * curvature, 1.0)
+    # Convert to degrees and limit the steering angle
+    steering_angle_deg = np.degrees(steering_angle)
+    steering_angle_deg *=-1
+
+    # Apply a small deadband to reduce osscilations
+    if abs(steering_angle_deg) < 2:
+        steering_angle_deg = 0
+
+    if steering_angle_deg <=-18.6:
+        steering_angle_deg == -20.5
+
+    steering_angle_deg = np.clip(steering_angle_deg, -20.5, max_steering_angle)
+
+    rclpy.loginfo(steering_angle_deg)
+
+    steering_pub.publish(steering_angle_deg)
+
+    velocity = Float32()
+    int_steering = int(steering_angle_deg)
+
+    velocity.data=  4 * ( 1 - (int_steering/40) )  #Tunable  but not that important at first 
+    cmd_pub.publish(6) #Tunable but not that important at first
+'''
+
+    if (depth <= 2000 and depth > 0):   #tuning
+        if color == 'yellow':
+            steering_angle_deg += 4    #tuning
+
+            steering_angle_deg *=-1
+            rclpy.loginfo(steering_angle_deg)
+            steering_pub.publish(steering_angle_deg)
+            velocity = Float32()
+            velocity.data= 7 * ( 1 - (int_steering/40) )
+            cmd_pub.publish(velocity)
+
+
+        elif color == 'blue':
+            steering_angle_deg -= 4  #tuning
+
+            steering_angle_deg *=-1
+            rclpy.loginfo(steering_angle_deg)
+            steering_pub.publish(steering_angle_deg)
+            velocity = Float32()
+            velocity.data= 7 * ( 1 - (int_steering/40) )
+            cmd_pub.publish(velocity)
+        else:
+            steering_angle_deg *=-1
+            rclpy.loginfo(steering_angle_deg)
+            steering_pub.publish(steering_angle_deg)
+            velocity = Float32()
+            int_steering = int(steering_angle_deg)
+            velocity.data= 7 * ( 1 - (int_steering/40) )
+            cmd_pub.publish(velocity)
+
+
+
+
+'''
+   
+
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        init_node()
+        rclpy.spin()
+
+    except rclpy.ROSInterruptException:
+        pass
