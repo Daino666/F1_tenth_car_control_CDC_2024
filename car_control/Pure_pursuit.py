@@ -24,7 +24,7 @@ def csv_reading(file_path, column_name):
     return column_data
 
 
-file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'#3omd4
+file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'
 column_x = 'positions_x_odom'
 column_y = 'positions_y_odom'
 
