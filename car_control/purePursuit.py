@@ -10,8 +10,6 @@ from pyglet.gl import GL_POINTS
 """
 Planner Helpers
 """
-
-
 @njit(fastmath=False, cache=True)
 def nearest_point_on_trajectory(point, trajectory):
     """
