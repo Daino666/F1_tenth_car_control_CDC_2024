@@ -1,18 +1,28 @@
-#!/usr/bin/env python 
 import csv
 import rclpy
 import numpy as np
 from std_msgs.msg import Float32, String
+from geographic_msgs.msg import Point
 #from tf.transformations import euler_from_quaternion
-import time 
+
+
 '''
 I have changed the path of the file to read the Test.csv
        commented some unecessaryy subscribers
        changed the wheel_base to 0.3240 obtained from Technical guid
        changed all occurunces of rospy to rclpy
 '''
+
 counter = 0
 flag = 'y'
+wheel_base = 0.3240
+file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'
+column_x = 'positions_x_odom'
+column_y = 'positions_y_odom'
+x_values = csv_reading(file_path, column_x)  
+y_values = csv_reading(file_path, column_y)   
+num_path_values  = len(x_values)
+path = list(zip(x_values, y_values))
 
 def csv_reading(file_path, column_name):
     column_data = []
@@ -23,39 +33,6 @@ def csv_reading(file_path, column_name):
                 column_data.append(float(row[column_name]))
     return column_data
 
-
-file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'
-column_x = 'positions_x_odom'
-column_y = 'positions_y_odom'
-
-x_values = csv_reading(file_path, column_x)  
-y_values = csv_reading(file_path, column_y)   
-num_path_values  = len(x_values)
-
-path = list(zip(x_values, y_values))
-
-
-def init_node(arg = None):
-
-    global cmd_pub, steering_pub
-
-    rclpy.init(args = arg)
-    node=rclpy.create_node('PID_wall_following')
-
-    ##rclpy.Subscriber('/aft_mapped_adjusted', Odometry, callvack)
-    ##rclpy.Subscriber('/depth', Float32, manage_depth)
-    ##rclpy.Subscriber('/color', String, manage_color)
-
-
-    cmd_pub = rclpy.Publisher("/autodrive/f1tenth_1/throttle", Float32, queue_size=0) 
-
-    steering_pub = rclpy.Publisher("/autodrive/f1tenth_1/steering", Float32, queue_size=0)
-
-    rate = rclpy.Rate(10)
-    rate.sleep()
-
-
-wheel_base = 0.3240
 
 def stop():
     while True:
@@ -70,37 +47,18 @@ def normalize_angle(angle):
     return angle
 
 
-def manage_depth(msg):
-    global depth
-    depth = msg.data
-    #rclpy.loginfo(depth)
-    
-def manage_color(msg):
-    global color
-    color = msg.data
-
-def callvack(odom):
+def callvack(Point):
     global C_pose, yaw, flag, counter, num_path_values, path
 
     C_pose = [0.0,0.0]
-    C_pose[0] = odom.pose.pose.position.x
-    C_pose[1] = odom.pose.pose.position.y
-    orientation_q = odom.pose.pose.orientation
-    z_orien = odom.pose.pose.orientation.z
+    C_pose[0] = Point.x
+    C_pose[1] = Point.y
+    orientation_q = Point.pose.pose.orientation
+    z_orien = Point.pose.pose.orientation.z
     orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
     #(_, _, yaw) = euler_from_quaternion(orientation_list)
 
 
-    if int(C_pose[1]) == 0 and flag == 'y':
-        if counter !=7:
-            counter+=1 
-            rclpy.loginfo(counter)
-            flag='n'
-        else:
-            pass #-------------------------------------
-
-    if int(C_pose[1]) != 0:
-        flag = 'y'
 
 
     for i in range (0, num_path_values):
@@ -117,51 +75,9 @@ def callvack(odom):
             return
 
 
-'''
-
-    if C_pose[1] >= -2.375 and C_pose[1] <= 2.375 and yaw <=0:
-        rclpy.loginfo("left to right")
-        waypoints = left_to_right
-        for point in waypoints:
-            if point[1] < (C_pose[1] - look_ahead1) and point[1] >= (C_pose[1] - look_ahead1-2):
-                calculate_curv(point)
-                return
-
-    if C_pose[1]>= -2.375 and C_pose[1]<= 2.375 and yaw > 0:
-        rclpy.loginfo("right to left")
-
-        waypoints = right_to_left
-        for point in waypoints:
-            if point[1] > (C_pose[1] + look_ahead1) and point[1] <= (C_pose[1] + look_ahead1+2):
-                calculate_curv(point)
-                return
-    
-
-    if C_pose[1] > 2.375 :
-        rclpy.loginfo("left circle")
-
-        cy = 8.56
-        cx = 0
-        angle = np.arctan2(C_pose[1]-cy, C_pose[0]-cx)
-        lookAhead_angle = angle + look_ahead2 / radius
-        lookAhead_point = (cx+(radius * np.cos(lookAhead_angle)), cy+(radius * np.sin(lookAhead_angle)))
-        calculate_curv(lookAhead_point)
-    
-    if C_pose[1] < -2.375 :
-        rclpy.loginfo("right circle")
-
-        cy = - 8.56
-        cx = 0
-        angle = np.arctan2(C_pose[1]-cy, C_pose[0]-cx)
-        lookAhead_angle = angle - look_ahead2 / radius
-        lookAhead_point = (cx+(radius * np.cos(lookAhead_angle)), (radius * np.sin(lookAhead_angle))+cy)
-
-        calculate_curv(lookAhead_point)
-        '''
 
 
 def calculate_curv(point):
-    global depth, color
    # Calculate relative position 
     dx = point[0] - C_pose[0]
     dy = point[1] - C_pose[1]
@@ -192,67 +108,35 @@ def calculate_curv(point):
     steering_angle_deg = np.degrees(steering_angle)
     steering_angle_deg *=-1
 
-    # Apply a small deadband to reduce osscilations
-    if abs(steering_angle_deg) < 2:
-        steering_angle_deg = 0
 
-    if steering_angle_deg <=-18.6:
-        steering_angle_deg == -20.5
 
     steering_angle_deg = np.clip(steering_angle_deg, -20.5, max_steering_angle)
 
     rclpy.loginfo(steering_angle_deg)
 
     steering_pub.publish(steering_angle_deg)
-
-    velocity = Float32()
-    int_steering = int(steering_angle_deg)
-
-    velocity.data=  4 * ( 1 - (int_steering/40) )  #Tunable  but not that important at first 
+    
     cmd_pub.publish(6) #Tunable but not that important at first
-'''
-
-    if (depth <= 2000 and depth > 0):   #tuning
-        if color == 'yellow':
-            steering_angle_deg += 4    #tuning
-
-            steering_angle_deg *=-1
-            rclpy.loginfo(steering_angle_deg)
-            steering_pub.publish(steering_angle_deg)
-            velocity = Float32()
-            velocity.data= 7 * ( 1 - (int_steering/40) )
-            cmd_pub.publish(velocity)
 
 
-        elif color == 'blue':
-            steering_angle_deg -= 4  #tuning
+def main(arg = None):
 
-            steering_angle_deg *=-1
-            rclpy.loginfo(steering_angle_deg)
-            steering_pub.publish(steering_angle_deg)
-            velocity = Float32()
-            velocity.data= 7 * ( 1 - (int_steering/40) )
-            cmd_pub.publish(velocity)
-        else:
-            steering_angle_deg *=-1
-            rclpy.loginfo(steering_angle_deg)
-            steering_pub.publish(steering_angle_deg)
-            velocity = Float32()
-            int_steering = int(steering_angle_deg)
-            velocity.data= 7 * ( 1 - (int_steering/40) )
-            cmd_pub.publish(velocity)
+    global node, cmd_pub, steering_pub
+    rclpy.init(args = arg)
 
+    node=rclpy.create_node('PID_wall_following')
 
+    cmd_pub = node.create_publisher(Float32, "/autodrive/f1tenth_1/throttle_command", queue_size=0) 
+    steering_pub = node.create_publisher(Float32, "/autodrive/f1tenth_1/steering_command", queue_size= 0)
 
+    node.create_subscription( Point,"/autodrive/f1tenth_1/ips", callvack)
 
-'''
-   
 
 
 
 if __name__ == '__main__':
     try:
-        init_node()
+        main()
         rclpy.spin()
 
     except rclpy.ROSInterruptException:
