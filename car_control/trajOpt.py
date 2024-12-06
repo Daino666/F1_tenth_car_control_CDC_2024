@@ -7,6 +7,11 @@ from skimage.io import imsave
 from PIL import Image
 from skimage.morphology import skeletonize
 import matplotlib.pyplot as plt
+from scipy.spatial import KDTree
+from scipy.ndimage import binary_dilation, binary_erosion
+from scipy.spatial import distance
+import cv2
+
 
 # Configuration dictionary
 config = {
@@ -19,6 +24,42 @@ config = {
 }
 
 
+
+
+def compute_inner_outer_distances(occupancy_grid, skeleton_points):
+    """
+    Compute the inner and outer boundary distances for each point on the centerline.
+
+    Parameters:
+    - occupancy_grid: 2D numpy array representing the map (1 for occupied, 0 for free space)
+    - skeleton: 2D numpy array representing the centerline
+
+    Returns:
+    - inner_distances: Array of distances to the inner boundary for each centerline point
+    - outer_distances: Array of distances to the outer boundary for each centerline point
+    - centerline_points: Array of (x, y) coordinates for the centerline points
+    """
+    # Ensure the grid is binary
+    occupancy_grid = (occupancy_grid > 0).astype(np.bool_)
+
+    # Identify inner and outer boundaries using dilation/erosion
+    outer_boundary = binary_dilation(occupancy_grid) & ~occupancy_grid
+    inner_boundary = binary_erosion(~occupancy_grid) & ~occupancy_grid
+
+    # Extract coordinates of the boundaries and skeleton points
+    inner_coords = np.argwhere(inner_boundary)
+    outer_coords = np.argwhere(outer_boundary)
+
+    # Compute distances from each skeleton point to inner and outer boundaries
+    inner_distances = []
+    outer_distances = []
+    for point in skeleton_points:
+        inner_dist = distance.cdist([point], inner_coords).min()
+        outer_dist = distance.cdist([point], outer_coords).min()
+        inner_distances.append(inner_dist)
+        outer_distances.append(outer_dist)
+
+    return np.array(inner_distances), np.array(outer_distances)
 
 def load_occupancy():
     with open("occupancy_grid.csv", "r") as csvfile:
@@ -304,17 +345,71 @@ def plot_points_on_occupancy_grid(grid, points, title="Occupancy Grid with Point
     # Show the plot
     plt.show()
 
+def visualize_distances(occupancy_grid, distances, skeleton_coords):
+    """
+    Visualize the distances between inner and outer boundaries.
+
+    Parameters:
+    - occupancy_grid: 2D numpy array of the map.
+    - distances: Array of distances between boundaries.
+    - skeleton_coords: Coordinates of the centerline.
+    """
+    plt.figure(figsize=(10, 8))
+    plt.imshow(occupancy_grid, cmap='gray')
+    plt.scatter(skeleton_coords[:, 1], skeleton_coords[:, 0], c=distances, cmap='viridis', s=5)
+    plt.colorbar(label='Distance Between Boundaries')
+    plt.title("Distance Between Inner and Outer Boundaries")
+    plt.xlabel("X-axis")
+    plt.ylabel("Y-axis")
+    plt.show()
+
+def plot_three_lines(line1_points, line2_points, line3_points):
+    # Define a helper function to plot a single line
+    def plot_line(points, color, label):
+        x_coords, y_coords = zip(*points)  # Extract x and y coordinates
+        plt.plot(x_coords, y_coords, color=color, label=label, marker='o')  # Plot line with markers
+    
+    # Plot all three lines
+    plt.figure(figsize=(8, 6))
+    plot_line(line1_points, color='red', label='Line 1')
+    plot_line(line2_points, color='blue', label='Line 2')
+    plot_line(line3_points, color='green', label='Line 3')
+    
+    # Add labels and legend
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    plt.title('Visualization of Three Lines')
+    plt.legend()
+    plt.grid(True)
+    
+    # Show the plot
+    plt.show()
 
 
 
 def main():
     #  Example usage
-    png_file = "/home/autodrive_devkit/src/car_control/car_control/skeleton_path_masked.png"
+    skeleton_path = "/home/autodrive_devkit/src/car_control/car_control/skeleton_path_masked.png"
+    outer_bound_path = "/home/autodrive_devkit/src/car_control/car_control/outer_boundry.png"
+    inner_bound_path = "/home/autodrive_devkit/src/car_control/car_control/IneerBounds.png"
+
+
     occupancy = load_occupancy()
-    skeleton = png_to_skeleton(png_file)
-    skeleton_points = skeleton_coordinates(skeleton)
+    heat_map = preprocess_occupancy_grid(occupancy)
 
-    plot_points_on_occupancy_grid(occupancy, skeleton_points)
+    skeleton = png_to_skeleton(skeleton_path)
 
+    keleton_points = skeleton_coordinates(skeleton)
+
+    inner_bound = png_to_skeleton(inner_bound_path)
+    inner_bound_points = skeleton_coordinates(inner_bound)
+
+    outer_bound = png_to_skeleton(outer_bound_path)
+    outer_bound_points = skeleton_coordinates(outer_bound)
+
+    plot_three_lines(keleton_points,inner_bound_points,outer_bound_points)
+
+
+    
 if __name__ == "__main__":
     main()
