@@ -3,8 +3,8 @@ from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 
 # Vehicle and trajectory parameters
-a_max = 8.83  # Maximum acceleration (m/s^2)
-a_lat_max = 3  # Maximum lateral acceleration (m/s^2) try
+a_max = 5.2  # Maximum acceleration (m/s^2)
+a_lat_max = 3.6  # Maximum lateral acceleration (m/s^2) try
 v_max = 22.88  # Maximum velocity (m/s)
 
 def compute_curvature(trajectory):#will be removed
@@ -50,8 +50,10 @@ def compute_speed_profile(trajectory, a_max, a_lat_max, v_max):
     
     # Forward pass: Respect acceleration limits
     N = len(trajectory)
-    speed = np.zeros(N)
-    speed[0] = 0  # Start from rest
+    #speed = np.zeros(N)
+    initial_speed = 0
+    speed=[]
+    speed[0] = initial_speed  # Start from rest
     for i in range(1, N):
         d = np.linalg.norm(trajectory[i] - trajectory[i - 1])  # Distance
         speed[i] = min(v_curvature[i], np.sqrt(speed[i - 1]**2 + 2 * a_max * d))
@@ -60,6 +62,7 @@ def compute_speed_profile(trajectory, a_max, a_lat_max, v_max):
     for i in range(N - 2, -1, -1):
         d = np.linalg.norm(trajectory[i + 1] - trajectory[i])  # Distance
         speed[i] = min(speed[i], np.sqrt(speed[i + 1]**2 + 2 * a_max * d))
+        initial_speed = speed[i]
     
     return speed
 
