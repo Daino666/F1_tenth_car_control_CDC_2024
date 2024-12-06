@@ -3,7 +3,10 @@ import rclpy
 import numpy as np
 from std_msgs.msg import Float32, String
 from geographic_msgs.msg import Point
-#from tf.transformations import euler_from_quaternion
+import tf2_geometry_msgs
+from tf2_ros import TransformListener, Buffer
+from geometry_msgs.msg import Quaternion
+from tf2_ros import TransformException
 
 
 '''
@@ -13,16 +16,6 @@ I have changed the path of the file to read the Test.csv
        changed all occurunces of rospy to rclpy
 '''
 
-counter = 0
-flag = 'y'
-wheel_base = 0.3240
-file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'
-column_x = 'positions_x_odom'
-column_y = 'positions_y_odom'
-x_values = csv_reading(file_path, column_x)  
-y_values = csv_reading(file_path, column_y)   
-num_path_values  = len(x_values)
-path = list(zip(x_values, y_values))
 
 def csv_reading(file_path, column_name):
     column_data = []
@@ -34,10 +27,6 @@ def csv_reading(file_path, column_name):
     return column_data
 
 
-def stop():
-    while True:
-        cmd_pub.publish(0.0)
-        steering_pub.publish(0.0)
 
 def normalize_angle(angle):
     while angle > np.pi:
@@ -77,7 +66,7 @@ def callvack(Point):
 
 
 
-def calculate_curv(point):
+def calculate_curv(point, wheel_base):
    # Calculate relative position 
     dx = point[0] - C_pose[0]
     dy = point[1] - C_pose[1]
@@ -120,7 +109,17 @@ def calculate_curv(point):
 
 
 def main(arg = None):
+   
+    # Paramaeters 
+    wheel_base = 0.3240
+    file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'
+    column_x = 'positions_X'
+    column_y = 'positions_y'
+    x_values = csv_reading(file_path, column_x)  
+    y_values = csv_reading(file_path, column_y)   
+    path = list(zip(x_values, y_values))
 
+    #Initialize ROS2
     global node, cmd_pub, steering_pub
     rclpy.init(args = arg)
 
@@ -130,6 +129,10 @@ def main(arg = None):
     steering_pub = node.create_publisher(Float32, "/autodrive/f1tenth_1/steering_command", queue_size= 0)
 
     node.create_subscription( Point,"/autodrive/f1tenth_1/ips", callvack)
+
+
+    #publishing a
+
 
 
 
