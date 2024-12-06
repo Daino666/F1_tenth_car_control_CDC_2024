@@ -30,7 +30,7 @@ def main(args = None):
 
 def CSV_SAVE():
     global flag
-    with open("/home/autodrive_devkit/src/car_control/car_control/Test.csv", mode="a") as csvfile:
+    with open("/home/autodrive_devkit/src/car_control/car_control/Test.csv", mode="w") as csvfile:
         fieldnames = ["positions_X", "positions_y", "Time_Sec"]
         writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
         if flag == 0:
