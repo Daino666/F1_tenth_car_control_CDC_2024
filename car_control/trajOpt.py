@@ -24,8 +24,6 @@ config = {
 }
 
 
-
-
 def compute_inner_outer_distances(occupancy_grid, skeleton_points):
     """
     Compute the inner and outer boundary distances for each point on the centerline.
