@@ -53,7 +53,7 @@ def initialize_node():
     )
 
     # Load path from a CSV file
-    file_path = '/home/daino/workspace/src/real_time/scripts/wp_file.csv'
+    file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'
     column_x = 'positions_x_odom'
     column_y = 'positions_y_odom'
     path_x_coords = csv_reading(file_path, column_x)

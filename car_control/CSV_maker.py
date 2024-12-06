@@ -3,22 +3,13 @@ import csv
 from geometry_msgs.msg import Point
 import std_msgs.msg 
 import time
-<<<<<<< HEAD
-=======
-from rclpy.node import Node
-
->>>>>>> f8eb90b86ac0ff2f01f37002c8afeaf9e1aaea9f
 
 
 flag = 0
 start = time.time()
 
 def position(POSE):
-<<<<<<< HEAD
     global X , Y, Dict, Timer
-=======
-    global X , Y, Dict, timer
->>>>>>> f8eb90b86ac0ff2f01f37002c8afeaf9e1aaea9f
     msg = POSE
     X = msg.x
     Y = msg.y
@@ -31,11 +22,7 @@ def main(args = None):
     Subscriber = node.create_subscription(Point, '/autodrive/f1tenth_1/ips', position ,10)
     while rclpy.ok ():
         rclpy .spin(node)
-<<<<<<< HEAD
     node.destroy_timer(Timer)
-=======
-    node.destroy_timer(timer)
->>>>>>> f8eb90b86ac0ff2f01f37002c8afeaf9e1aaea9f
     node.destroy_node()
     rclpy.shutdown()
 
@@ -56,10 +43,6 @@ if __name__ == '__main__':
     main()
     while rclpy.ok ():
         rclpy .spin(node)
-<<<<<<< HEAD
     node.destroy_timer(Timer)
-=======
-    node.destroy_timer(timer)
->>>>>>> f8eb90b86ac0ff2f01f37002c8afeaf9e1aaea9f
     node.destroy_node()
     rclpy.shutdown()
