@@ -8,14 +8,6 @@ import time
 flag = 0
 start = time.time()
 
-def position(POSE):
-    global X , Y, Dict, Timer
-    msg = POSE
-    X = msg.x
-    Y = msg.y
-    Dict = {"positions_X": X, "positions_y": Y, "Time_Sec": (time.time()- start)}
-    CSV_SAVE()
-
 def main(args = None):
     rclpy.init(args = args)
     node = rclpy.create_node("CSV_maker")
@@ -28,10 +20,20 @@ def main(args = None):
 
 
 
+def position(POSE):
+    global X , Y, Dict, Timer
+    msg = POSE
+    X = msg.x
+    Y = msg.y
+    Dict = {"positions_X": X, "positions_y": Y}
+    CSV_SAVE()
+
+
+
 def CSV_SAVE():
     global flag
-    with open("/home/autodrive_devkit/src/car_control/car_control/Test.csv", mode="a") as csvfile:
-        fieldnames = ["positions_X", "positions_y", "Time_Sec"]
+    with open("/home/autodrive_devkit/src/car_control/car_control/refrence.csv", mode="a") as csvfile:
+        fieldnames = ["positions_X", "positions_y"]
         writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
         if flag == 0:
             writer.writeheader()
