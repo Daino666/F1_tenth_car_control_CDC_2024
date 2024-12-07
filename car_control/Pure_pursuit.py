@@ -6,6 +6,7 @@ from geometry_msgs.msg import Point
 from sensor_msgs.msg import Imu
 import quaternion  
 
+yaw = 0.0
 def csv_reading(file_path, column_name):
     column_data = []
     with open(file_path, mode='r') as file:
@@ -24,35 +25,74 @@ def normalize_angle(angle):
 
 def euler_from_quaternion(quaternion):
     """
-    Convert a geometry_msgs.msg.Quaternion to Euler angles using numpy-quaternion.
+    Convert a ROS2 Quaternion to Euler angles (roll, pitch, yaw)
+    
+    Args:
+        quaternion (geometry_msgs.msg.Quaternion): Input quaternion
+    
+    Returns:
+        tuple: (roll, pitch, yaw) in radians
     """
-    # Convert quaternion to numpy-quaternion type
-    q = np.quaternion(quaternion.w, quaternion.x, quaternion.y, quaternion.z)
+    # Extract quaternion components directly from the Quaternion object
+    x = quaternion.x
+    y = quaternion.y
+    z = quaternion.z
+    w = quaternion.w
+    
+    # Roll (x-axis rotation)
+    sinr_cosp = 2 * (w * x + y * z)
+    cosr_cosp = 1 - 2 * (x * x + y * y)
+    roll = np.arctan2(sinr_cosp, cosr_cosp)
 
-    # Compute Euler angles from quaternion
-    roll = np.arctan2(2 * (q.w * q.x + q.y * q.z), 1 - 2 * (q.x**2 + q.y**2))
-    pitch = np.arcsin(2 * (q.w * q.y - q.z * q.x))
-    yaw = np.arctan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y**2 + q.z**2))
+    # Pitch (y-axis rotation)
+    sinp = 2 * (w * y - z * x)
+    pitch = np.arcsin(sinp)
+
+    # Yaw (z-axis rotation)
+    siny_cosp = 2 * (w * z + x * y)
+    cosy_cosp = 1 - 2 * (y * y + z * z)
+    yaw = np.arctan2(siny_cosp, cosy_cosp)
 
     return roll, pitch, yaw
 
 
 
-
 def convert_to_steer_Command(steering):
+    """
+    Convert steering angle to a normalized command
+    
+    Args:
+        steering (float): Steering angle in degrees
+    
+    Returns:
+        Float32: Normalized steering command
+    """
+    # Create a new Float32 message
     command = Float32()
-    command = np.clip(steering, -30, 30)
-    command/=30
+    
+    # Clip the steering angle to the valid range
+    steering_clipped = np.clip(steering, -30, 30)
+    
+    # Normalize to range [-1, 1]
+    command.data = steering_clipped / 30.0
+    
     return command
 
 def get_yaw(Imu):
-    global yaw
-    orientation_q = Imu.orientation
-    z_orien = Imu.orientation.z
-    orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
-    (_, _, yaw) = euler_from_quaternion(orientation_list)
+    """
+    Extract yaw angle from IMU orientation quaternion
     
-
+    Args:
+        Imu (sensor_msgs.msg.Imu): IMU message containing orientation quaternion
+    """
+    global yaw
+    
+    # Extract quaternion from IMU message
+    orientation_q = Imu.orientation
+    
+    # Convert quaternion to Euler angles
+    # Unpack all three angles, but we only care about yaw
+    _, _, yaw = euler_from_quaternion(orientation_q)
 
 def get_point(Point):
     global C_pose, yaw, flag, counter, path
@@ -77,7 +117,7 @@ def get_point(Point):
 
 
 def calculate_curv(point, wheel_base =0.3240):
-    global cmd_pub, steering_pub
+    global cmd_pub, steering_pub, yaw
    # Calculate relative position 
     dx = point[0] - C_pose[0]
     dy = point[1] - C_pose[1]
@@ -100,11 +140,14 @@ def calculate_curv(point, wheel_base =0.3240):
     # Convert to degrees and limit the steering angle
     steering_angle_deg = np.degrees(steering_angle)
 
-    rclpy.loginfo(steering_angle_deg)
+    steering_command = convert_to_steer_Command(steering_angle_deg)
 
-    steering_pub.publish(steering_angle_deg)
+    steering_pub.publish(steering_command)
     
-    cmd_pub.publish(0.01) 
+    vel_command = Float32()
+    vel_command.data = 0.01
+
+    cmd_pub.publish(vel_command) 
 
 
 def main(arg = None):
@@ -125,11 +168,12 @@ def main(arg = None):
 
     node=rclpy.create_node('PID_wall_following')
 
-    cmd_pub = node.create_publisher(Float32, "/autodrive/f1tenth_1/throttle_command", queue_size=0) 
-    steering_pub = node.create_publisher(Float32, "/autodrive/f1tenth_1/steering_command", queue_size= 0)
+    cmd_pub = node.create_publisher(Float32, "/autodrive/f1tenth_1/throttle_command", 1) 
+    steering_pub = node.create_publisher(Float32, "/autodrive/f1tenth_1/steering_command", 1)
 
-    node.create_subscription( Point,"/autodrive/f1tenth_1/ips", get_point)
-    node.create_subscription( Imu ,"/autodrive/f1tenth_1/imu", get_yaw )
+    node.create_subscription( Point,"/autodrive/f1tenth_1/ips", get_point, 1)
+    node.create_subscription( Imu ,"/autodrive/f1tenth_1/imu", get_yaw , 1)
+    rclpy.spin(node)
 
 
 
