@@ -77,14 +77,14 @@ def preprocess_occupancy_grid(occupancy_grid):
     Returns:
     - Processed safe space grid
     """    
-    safe_space = binary_dilation(occupancy_grid, iterations=4)
+    safe_space = binary_dilation(occupancy_grid, iterations=6)
     safe_space = safe_space.astype(float)
     return safe_space
 
 
-def skeleton_to_png(skeleton ,output_file="skeleton_photo.png"):
+def array_to_PNG(array ,output_file="skeleton_photo.png"):
     # Save the pruned skeleton as a PNG file
-    imsave(output_file, skeleton.astype(np.uint8) * 255)
+    imsave(output_file, array.astype(np.uint8) * 255)
 
 def png_to_array(png_file):
     """
@@ -126,7 +126,7 @@ def extract_centerline(occupancy_grid):
 
 
 def line_coordinates(line):
-    y_coords, x_coords = np.nonzero(skeleton)
+    y_coords, x_coords = np.nonzero(line)
     sCenterLine_points = np.column_stack((x_coords, y_coords))
 
     # Create a KDTree to efficiently find nearest neighbors for ordering points
@@ -388,22 +388,25 @@ def plot_three_lines(line1_points, line2_points, line3_points):
 def main():
     #paths
     occupancy_path = '/home/autodrive_devkit/src/car_control/car_control/CSVs/occupancy_grid.csv'
-    png_skelton_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/skeleton_path_masked.png"
-    outer_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/outer_boundry.png"
-    inner_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/IneerBounds.png"
+    png_skelton_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/Masked/Centerline.png"
+    outer_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/Masked/outer.png"
+    inner_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/Masked/ineer_bound.png"
+
 
 #Step one : load occupacy grid 
     occupancy = load_occupancy(occupancy_path)
 
 
-#Terp two : make heatmap for safety factor
+#step two : make heatmap for safety factor
     heat_map = preprocess_occupancy_grid(occupancy)
 
-#Step three: Get skeleton with brances and noise 
+#Step three: Get skeleton with branches and noise 
     skeleton = extract_centerline(heat_map)
 
 #step four : turn to a png image to remove branches, noise and to get inner outer bounds 
-    skeleton_to_png(skeleton)
+    #array_to_PNG(skeleton)
+    #array_to_PNG(heat_map, "heat_map.png")
+    
     
 #step five : go edit the photot and remove branches 
 
