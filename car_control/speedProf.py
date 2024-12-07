@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
+from csv_to_arr import CSVConverter
 
 # Vehicle and trajectory parameters
 a_max = 5.2  # Maximum acceleration (m/s^2)
@@ -105,13 +106,16 @@ def plot_speed_profile(trajectory, speed_profile):
 
 # Example usage
 if __name__ == "__main__":
-    # Example trajectory (circle)
-    theta = np.linspace(0, 2 * np.pi, 100)
-    t = np.linspace(0, 2 * np.pi, 100)
-    x = 2 * np.cos(t)
-    y = np.sin(2 * t)
-    trajectory = np.column_stack((x, y))
-    
+
+    path_obj= CSVConverter('CSVs/Centerline_points.csv')
+    trajectory_data = path_obj.to_array()
+
+    if not trajectory_data or len(trajectory_data) < 2:
+        print("Error: Invalid or empty trajectory data.")
+    else:
+        # Convert trajectory to NumPy array
+        trajectory = np.array(trajectory_data, dtype=float)
+
     # Compute speed profile
     speed_profile = compute_speed_profile(trajectory, a_max, a_lat_max, v_max)
     
