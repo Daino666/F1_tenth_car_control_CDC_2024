@@ -159,8 +159,12 @@ def get_map_coordinates(path_points, yaml_path, resolution=0.05):
     
     real_world_coords = []
     for y, x in path_points:
-        world_x = (x * resolution) + origin[0]  # Apply resolution and translate using origin
+        world_x = (x * resolution) + origin[0]  
+        world_x*=-1
+        world_x -=3
         world_y = (y * resolution) + origin[1]
+        world_y = ((world_y*-1) +3.2)
+        world_y+=5.3
         real_world_coords.append((world_x, world_y))
 
     return real_world_coords
@@ -448,7 +452,7 @@ def main():
 
 
 #step 10 import CSV
-
     create_CSV(CenterLine_points, "Centerline_points.csv")
+
 if __name__ == "__main__":
     main()

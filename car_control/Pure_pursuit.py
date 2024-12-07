@@ -135,7 +135,7 @@ def get_point(Point):
         angle_diff = np.degrees(angle_diff)
 
     
-        if distance <=5 and angle_diff>=-60  and  angle_diff<=60: #tunable
+        if distance <=2 :
             point =  path[i]
             calculate_curv(point)
             return
