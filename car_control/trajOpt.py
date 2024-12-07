@@ -60,7 +60,7 @@ def compute_inner_outer_distances(occupancy_grid, sCenterLine_points):
     return np.array(inner_distances), np.array(outer_distances)
 
 def load_occupancy():
-    with open("occupancy_grid.csv", "r") as csvfile:
+    with open("/home/autodrive_devkit/src/car_control/car_control/occupancy_grid.csv", "r") as csvfile:
         reader = csv.reader(csvfile)
         occupancy_grid = np.array([list(map(float, row)) for row in reader])
     return occupancy_grid
