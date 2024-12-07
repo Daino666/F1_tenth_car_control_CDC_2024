@@ -1,12 +1,37 @@
 import csv
 import rclpy
 import numpy as np
-from std_msgs.msg import Float32, String
+from std_msgs.msg import Float32
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import Imu
-import quaternion  
+import time
+
 
 yaw = 0.0
+flag = 0
+
+
+def position(POSE):
+    global X , Y, Dict, Timer
+    msg = POSE
+    X = msg.x
+    Y = msg.y
+    Dict = {"positions_X": X, "positions_y": Y}
+    CSV_SAVE()
+
+
+
+def CSV_SAVE():
+    global flag
+    with open("/home/autodrive_devkit/src/car_control/car_control/actual.csv", mode="a") as csvfile:
+        fieldnames = ["positions_X", "positions_y"]
+        writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
+        if flag == 0:
+            writer.writeheader()
+            flag = 1
+        writer.writerow(Dict)
+
+
 def csv_reading(file_path, column_name):
     column_data = []
     with open(file_path, mode='r') as file:
@@ -105,11 +130,12 @@ def get_point(Point):
         dx = path[i][0] - C_pose[0]
         dy = path[i][1] - C_pose[1]
         distance = np.sqrt(dx**2 + dy**2)
-        #waypoint_angle = np.arctan2(dy, dx)
-        #angle_diff = abs(normalize_angle(waypoint_angle - yaw))
-        #angle_diff = np.degrees(angle_diff)
+        waypoint_angle = np.arctan2(dy, dx)
+        angle_diff = abs(normalize_angle(waypoint_angle - yaw))
+        angle_diff = np.degrees(angle_diff)
 
-        if distance >= 2 and  distance <= 2.5:# and angle_diff>=0  and  angle_diff<=60: #tunable
+    
+        if distance <=5 and angle_diff>=-60  and  angle_diff<=60: #tunable
             point =  path[i]
             calculate_curv(point)
             return
@@ -145,7 +171,7 @@ def calculate_curv(point, wheel_base =0.3240):
     steering_pub.publish(steering_command)
     
     vel_command = Float32()
-    vel_command.data = 0.01
+    vel_command.data = 0.08
 
     cmd_pub.publish(vel_command) 
 
@@ -155,7 +181,7 @@ def main(arg = None):
 
     # Paramaeters 
     wheel_base = 0.3240
-    file_path = '/home/autodrive_devkit/src/car_control/car_control/Test.csv'
+    file_path = '/home/autodrive_devkit/src/car_control/car_control/refrence.csv'
     column_x = 'positions_X'
     column_y = 'positions_y'
     x_values = csv_reading(file_path, column_x)  
@@ -173,6 +199,8 @@ def main(arg = None):
 
     node.create_subscription( Point,"/autodrive/f1tenth_1/ips", get_point, 1)
     node.create_subscription( Imu ,"/autodrive/f1tenth_1/imu", get_yaw , 1)
+    node.create_subscription(Point, '/autodrive/f1tenth_1/ips', position ,10)
+
     rclpy.spin(node)
 
 
