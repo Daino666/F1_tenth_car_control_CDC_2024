@@ -361,7 +361,7 @@ def visualize_distances(occupancy_grid, distances, skeleton_coords):
     plt.ylabel("Y-axis")
     plt.show()
 
-def plot_three_lines(line1_points, line2_points, line3_points):
+def ploting(line1_points, line2_points, line3_points, optimized_path):
     # Define a helper function to plot a single line
     def plot_line(points, color, label):
         x_coords, y_coords = zip(*points)  # Extract x and y coordinates
@@ -369,14 +369,15 @@ def plot_three_lines(line1_points, line2_points, line3_points):
     
     # Plot all three lines
     plt.figure(figsize=(8, 6))
-    plot_line(line1_points, color='red', label='Line 1')
-    plot_line(line2_points, color='blue', label='Line 2')
-    plot_line(line3_points, color='green', label='Line 3')
+    plot_line(line1_points, color='red', label='center Line')
+    plot_line(line2_points, color='blue', label='out_bound')
+    plot_line(line3_points, color='green', label='inn_bound')
+    plot_line(optimized_path, color='pink', label='oppa')
     
     # Add labels and legend
     plt.xlabel('X-axis')
     plt.ylabel('Y-axis')
-    plt.title('Visualization of Three Lines')
+    plt.title('Visualization')
     plt.legend()
     plt.grid(True)
     
@@ -405,7 +406,7 @@ def main():
     outer_bound = png_to_skeleton(outer_bound_path)
     outer_bound_points = skeleton_coordinates(outer_bound)
 
-    plot_three_lines(keleton_points,inner_bound_points,outer_bound_points)
+    ploting(keleton_points,inner_bound_points,outer_bound_points)
 
 
     
