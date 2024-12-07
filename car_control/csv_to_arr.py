@@ -1,17 +1,16 @@
 import csv
 
 class CSVConverter:
-
     def __init__(self, file_path):
-
         self.file_path = file_path
 
-    def to_array(self):
-
+    def to_array(self, skip_header=True):
         array = []
         try:
             with open(self.file_path, mode='r') as file:
                 reader = csv.reader(file)
+                if skip_header:
+                    next(reader, None)
                 for row in reader:
                     array.append(row)
             return array
