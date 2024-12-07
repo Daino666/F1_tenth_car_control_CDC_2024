@@ -29,6 +29,7 @@ setup(
             'wall_following  = car_control.wall_following:main',
             'wall_1  = car_control.1_wall_following:main',
             'wall_2  = car_control.2_wall_following:main',
+            'pure_pursuit = car_control.Pure_pursuit:main',
         ],
     },
 )#
