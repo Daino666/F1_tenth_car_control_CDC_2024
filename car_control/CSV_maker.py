@@ -32,7 +32,7 @@ def position(POSE):
 
 def CSV_SAVE():
     global flag
-    with open("/home/autodrive_devkit/src/car_control/car_control/refrence.csv", mode="a") as csvfile:
+    with open("/home/autodrive_devkit/src/car_control/car_control/CSVs/refrence.csv", mode="a") as csvfile:
         fieldnames = ["positions_X", "positions_y"]
         writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
         if flag == 0:
