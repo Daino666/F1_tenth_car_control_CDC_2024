@@ -59,8 +59,8 @@ def compute_inner_outer_distances(occupancy_grid, sCenterLine_points):
 
     return np.array(inner_distances), np.array(outer_distances)
 
-def load_occupancy():
-    with open("/home/autodrive_devkit/src/car_control/car_control/CSVs/occupancy_grid.csv", "r") as csvfile:
+def load_occupancy(path):
+    with open(path, "r") as csvfile:
         reader = csv.reader(csvfile)
         occupancy_grid = np.array([list(map(float, row)) for row in reader])
     return occupancy_grid
@@ -77,16 +77,16 @@ def preprocess_occupancy_grid(occupancy_grid):
     Returns:
     - Processed safe space grid
     """    
-    safe_space = binary_dilation(occupancy_grid, iterations=4)
+    safe_space = binary_dilation(occupancy_grid, iterations=6)
     safe_space = safe_space.astype(float)
     return safe_space
 
 
-def occupancy_to_png(skeleton ,output_file="skeleton_path.png"):
+def array_to_PNG(array ,output_file="skeleton_photo.png"):
     # Save the pruned skeleton as a PNG file
-    imsave(output_file, skeleton.astype(np.uint8) * 255)
+    imsave(output_file, array.astype(np.uint8) * 255)
 
-def png_to_skeleton(png_file):
+def png_to_array(png_file):
     """
     Convert a PNG file to a skeletonized binary array.
     
@@ -125,8 +125,8 @@ def extract_centerline(occupancy_grid):
     return skeleton
 
 
-def skeleton_coordinates(skeleton):
-    y_coords, x_coords = np.nonzero(skeleton)
+def line_coordinates(line):
+    y_coords, x_coords = np.nonzero(line)
     sCenterLine_points = np.column_stack((x_coords, y_coords))
 
     # Create a KDTree to efficiently find nearest neighbors for ordering points
@@ -386,27 +386,47 @@ def plot_three_lines(line1_points, line2_points, line3_points):
 
 
 def main():
-    #  Example usage
-    skeleton_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/skeleton_path_masked.png"
-    outer_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/outer_boundry.png"
-    inner_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/IneerBounds.png"
+    #paths
+    occupancy_path = '/home/autodrive_devkit/src/car_control/car_control/CSVs/occupancy_grid.csv'
+    png_skelton_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/Masked/Centerline.png"
+    outer_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/Masked/outer.png"
+    inner_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/Masked/ineer_bound.png"
 
 
-    occupancy = load_occupancy()
+#Step one : load occupacy grid 
+    occupancy = load_occupancy(occupancy_path)
+
+
+#step two : make heatmap for safety factor
     heat_map = preprocess_occupancy_grid(occupancy)
 
-    skeleton = png_to_skeleton(skeleton_path)
+#Step three: Get skeleton with branches and noise 
+    skeleton = extract_centerline(heat_map)
 
-    CenterLine_points = skeleton_coordinates(skeleton)
+#step four : turn to a png image to remove branches, noise and to get inner outer bounds 
+    #array_to_PNG(skeleton)
+    #array_to_PNG(heat_map, "heat_map.png")
+    
+    
+#step five : go edit the photot and remove branches 
 
-    inner_bound = png_to_skeleton(inner_bound_path)
-    inner_bound_points = skeleton_coordinates(inner_bound)
+    "Use gimp for masking the path and getting inner, outer boundries"
 
-    outer_bound = png_to_skeleton(outer_bound_path)
-    outer_bound_points = skeleton_coordinates(outer_bound)
+#step six: load image and save it to array 
+    skeleton = png_to_array(png_skelton_path)
+    inner_bound = png_to_array(inner_bound_path)
+    outer_bound = png_to_array(outer_bound_path)
 
+
+#step seven : make array of points only 
+    CenterLine_points = line_coordinates(skeleton)
+    inner_bound_points = line_coordinates(inner_bound)
+    outer_bound_points = line_coordinates(outer_bound)
+
+#step eight : plot and see if they are right 
     plot_three_lines(CenterLine_points,inner_bound_points,outer_bound_points)
 
+# step nine : Refrence points to the map instead of photo
 
     
 if __name__ == "__main__":
