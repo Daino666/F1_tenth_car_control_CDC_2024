@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import KDTree
 from scipy.ndimage import binary_dilation, binary_erosion
 from scipy.spatial import distance
-import cv2
+import yaml
 
 
 # Configuration dictionary
@@ -150,8 +150,20 @@ def line_coordinates(line):
 
     return  ordered_points
 
+def get_map_coordinates(path_points, yaml_path, resolution=0.05):
+    with open(yaml_path, 'r') as file:
+        config = yaml.safe_load(file)
 
+    # Extract the parameters from the YAML file
+    origin = config['origin']
+    
+    real_world_coords = []
+    for y, x in path_points:
+        world_x = (x * resolution) + origin[0]  # Apply resolution and translate using origin
+        world_y = (y * resolution) + origin[1]
+        real_world_coords.append((world_x, world_y))
 
+    return real_world_coords
 
 def optimize_trajectory(occupancy_grid, start_point, end_point, config):
     """
@@ -387,6 +399,7 @@ def plot_three_lines(line1_points, line2_points, line3_points):
 
 def main():
     #paths
+    yaml_path = "/home/autodrive_devkit/src/car_control/car_control/maps/iros_2024/scan_iros_map_compete2024.yaml"
     occupancy_path = '/home/autodrive_devkit/src/car_control/car_control/CSVs/occupancy_grid.csv'
     png_skelton_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/Masked/Centerline.png"
     outer_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/Masked/outer.png"
@@ -427,7 +440,11 @@ def main():
     plot_three_lines(CenterLine_points,inner_bound_points,outer_bound_points)
 
 # step nine : Refrence points to the map instead of photo
+    CenterLine_points = get_map_coordinates(CenterLine_points, yaml_path)
+    inner_bound_points = get_map_coordinates(inner_bound_points, yaml_path)
+    outer_bound_points = get_map_coordinates(outer_bound_points, yaml_path)
+    plot_three_lines(CenterLine_points,inner_bound_points,outer_bound_points)
 
-    
+
 if __name__ == "__main__":
     main()
