@@ -3,11 +3,8 @@ import rclpy
 import numpy as np
 from std_msgs.msg import Float32, String
 from geometry_msgs.msg import Point
-import tf2_geometry_msgs
-from tf2_ros import TransformListener, Buffer
-from geometry_msgs.msg import Quaternion
-from tf2_ros import TransformException
-
+from sensor_msgs.msg import Imu
+import quaternion  
 
 def csv_reading(file_path, column_name):
     column_data = []
@@ -25,45 +22,62 @@ def normalize_angle(angle):
         angle += 2 * np.pi
     return angle
 
+def euler_from_quaternion(quaternion):
+    """
+    Convert a geometry_msgs.msg.Quaternion to Euler angles using numpy-quaternion.
+    """
+    # Convert quaternion to numpy-quaternion type
+    q = np.quaternion(quaternion.w, quaternion.x, quaternion.y, quaternion.z)
+
+    # Compute Euler angles from quaternion
+    roll = np.arctan2(2 * (q.w * q.x + q.y * q.z), 1 - 2 * (q.x**2 + q.y**2))
+    pitch = np.arcsin(2 * (q.w * q.y - q.z * q.x))
+    yaw = np.arctan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y**2 + q.z**2))
+
+    return roll, pitch, yaw
+
+
+
+
 def convert_to_steer_Command(steering):
     command = Float32()
     command = np.clip(steering, -30, 30)
     command/=30
     return command
 
+def get_yaw(Imu):
+    global yaw
+    orientation_q = Imu.orientation
+    z_orien = Imu.orientation.z
+    orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
+    (_, _, yaw) = euler_from_quaternion(orientation_list)
+    
 
 
-def callvack(Point):
+def get_point(Point):
     global C_pose, yaw, flag, counter, path
 
     C_pose = [0.0,0.0]
     C_pose[0] = Point.x
     C_pose[1] = Point.y
-    orientation_q = Point.pose.pose.orientation
-    z_orien = Point.pose.pose.orientation.z
-    orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
-    #(_, _, yaw) = euler_from_quaternion(orientation_list)
-
-
-
 
     for i in range (path.shape[0]):
         dx = path[i][0] - C_pose[0]
         dy = path[i][1] - C_pose[1]
         distance = np.sqrt(dx**2 + dy**2)
-        waypoint_angle = np.arctan2(dy, dx)
-        angle_diff = abs(normalize_angle(waypoint_angle - yaw))
-        angle_diff = np.degrees (angle_diff)
+        #waypoint_angle = np.arctan2(dy, dx)
+        #angle_diff = abs(normalize_angle(waypoint_angle - yaw))
+        #angle_diff = np.degrees(angle_diff)
 
-        if distance >= 3.5 and  distance <= 4 and angle_diff>=0  and  angle_diff<=60: #tunable
+        if distance >= 2 and  distance <= 2.5:# and angle_diff>=0  and  angle_diff<=60: #tunable
             point =  path[i]
             calculate_curv(point)
             return
 
 
 
-
-def calculate_curv(point, wheel_base):
+def calculate_curv(point, wheel_base =0.3240):
+    global cmd_pub, steering_pub
    # Calculate relative position 
     dx = point[0] - C_pose[0]
     dy = point[1] - C_pose[1]
@@ -82,6 +96,7 @@ def calculate_curv(point, wheel_base):
     curvature = 2.0 * local_y  / (local_x**2 + local_y**2)
     
     steering_angle = np.arctan2(wheel_base * curvature, 1.0)
+
     # Convert to degrees and limit the steering angle
     steering_angle_deg = np.degrees(steering_angle)
 
@@ -89,7 +104,7 @@ def calculate_curv(point, wheel_base):
 
     steering_pub.publish(steering_angle_deg)
     
-    cmd_pub.publish(6) 
+    cmd_pub.publish(0.01) 
 
 
 def main(arg = None):
@@ -113,8 +128,8 @@ def main(arg = None):
     cmd_pub = node.create_publisher(Float32, "/autodrive/f1tenth_1/throttle_command", queue_size=0) 
     steering_pub = node.create_publisher(Float32, "/autodrive/f1tenth_1/steering_command", queue_size= 0)
 
-    node.create_subscription( Point,"/autodrive/f1tenth_1/ips", callvack)
-
+    node.create_subscription( Point,"/autodrive/f1tenth_1/ips", get_point)
+    node.create_subscription( Imu ,"/autodrive/f1tenth_1/imu", get_yaw )
 
 
 
