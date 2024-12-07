@@ -60,7 +60,7 @@ def compute_inner_outer_distances(occupancy_grid, sCenterLine_points):
     return np.array(inner_distances), np.array(outer_distances)
 
 def load_occupancy():
-    with open("/home/autodrive_devkit/src/car_control/car_control/occupancy_grid.csv", "r") as csvfile:
+    with open("/home/autodrive_devkit/src/car_control/car_control/CSVs/occupancy_grid.csv", "r") as csvfile:
         reader = csv.reader(csvfile)
         occupancy_grid = np.array([list(map(float, row)) for row in reader])
     return occupancy_grid
@@ -387,9 +387,9 @@ def plot_three_lines(line1_points, line2_points, line3_points):
 
 def main():
     #  Example usage
-    skeleton_path = "/home/autodrive_devkit/src/car_control/car_control/skeleton_path_masked.png"
-    outer_bound_path = "/home/autodrive_devkit/src/car_control/car_control/outer_boundry.png"
-    inner_bound_path = "/home/autodrive_devkit/src/car_control/car_control/IneerBounds.png"
+    skeleton_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/skeleton_path_masked.png"
+    outer_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/outer_boundry.png"
+    inner_bound_path = "/home/autodrive_devkit/src/car_control/car_control/Photos_for_Masking/IneerBounds.png"
 
 
     occupancy = load_occupancy()

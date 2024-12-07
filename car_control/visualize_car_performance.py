@@ -42,5 +42,5 @@ def plot_csv_data(file1, file2):
 
 if __name__ == '__main__':
 
-    plot_csv_data('/home/autodrive_devkit/src/car_control/car_control/actual.csv',
-                                 '/home/autodrive_devkit/src/car_control/car_control/refrence.csv')
+    plot_csv_data('/home/autodrive_devkit/src/car_control/car_control/CSVs/actual.csv',
+                                 '/home/autodrive_devkit/src/car_control/car_control/CSVs/refrence.csv')
