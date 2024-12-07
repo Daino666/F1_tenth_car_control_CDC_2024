@@ -181,7 +181,7 @@ def main(arg = None):
 
     # Paramaeters 
     wheel_base = 0.3240
-    file_path = '/home/autodrive_devkit/src/car_control/car_control/CSVs/refrence.csv'
+    file_path = '/home/autodrive_devkit/src/car_control/car_control/CSVs/Centerline_points.csv'
     column_x = 'positions_X'
     column_y = 'positions_y'
     x_values = csv_reading(file_path, column_x)  

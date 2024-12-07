@@ -238,8 +238,6 @@ def optimize_trajectory(occupancy_grid, start_point, end_point, config):
 
 
 
-
-
 def visualization(visual):
 
     visual = visual.astype(float)
@@ -287,9 +285,6 @@ def visualize_occupancy_grid(occupancy_grid, center_line=None, boundary_distance
     plt.tight_layout()
     plt.show()
 
-
-
-import matplotlib.pyplot as plt
 
 def visualize_points(points, title="Point Visualization", color='b', marker='o'):
     """
@@ -395,6 +390,12 @@ def plot_three_lines(line1_points, line2_points, line3_points):
     # Show the plot
     plt.show()
 
+def create_CSV(CSV, file_name):
+        with open(file_name, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            for row in CSV:
+                 writer.writerow(row)
+
 
 
 def main():
@@ -446,5 +447,8 @@ def main():
     plot_three_lines(CenterLine_points,inner_bound_points,outer_bound_points)
 
 
+#step 10 import CSV
+
+    create_CSV(CenterLine_points, "Centerline_points.csv")
 if __name__ == "__main__":
     main()
